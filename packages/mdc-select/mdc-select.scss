@@ -1,273 +1,159 @@
 //
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google Inc.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 //
 
-@import "@material/animation/functions";
+@import "./keyframes";
+@import "./mixins";
+@import "./variables";
+@import "@material/animation/variables";
+@import "@material/line-ripple/mdc-line-ripple";
+@import "@material/notched-outline/mdc-notched-outline";
+@import "@material/floating-label/mdc-floating-label";
 @import "@material/typography/mixins";
-@import "@material/theme/mixins";
+@import "@material/ripple/common";
+@import "@material/ripple/mixins";
 @import "@material/rtl/mixins";
-
-@mixin mdc-select-dd-arrow-svg-bg_($fill-hex-number: 000000, $opacity: .54) {
-  background-image: url(data:image/svg+xml,%3Csvg%20width%3D%2210px%22%20height%3D%225px%22%20viewBox%3D%227%2010%2010%205%22%20version%3D%221.1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%3E%0A%20%20%20%20%3Cpolygon%20id%3D%22Shape%22%20stroke%3D%22none%22%20fill%3D%22%23#{$fill-hex-number}%22%20fill-rule%3D%22evenodd%22%20opacity%3D%22#{$opacity}%22%20points%3D%227%2010%2012%2015%2017%2010%22%3E%3C%2Fpolygon%3E%0A%3C%2Fsvg%3E);
-}
+@import "./icon/mdc-select-icon";
+@import "./helper-text/mdc-select-helper-text";
+@import "./helper-text/mixins";
 
 // postcss-bem-linter: define select
 .mdc-select {
-  $dd-arrow-padding: 24px;
+  @include mdc-select-container-fill-color($mdc-select-fill-color);
+  @include mdc-ripple-surface;
+  @include mdc-ripple-radius-bounded;
+  // Select intentionally omits press ripple, so each state needs to be specified individually.
+  @include mdc-states-base-color($mdc-select-ink-color);
+  @include mdc-states-hover-opacity(mdc-states-opacity($mdc-select-ink-color, hover));
+  @include mdc-states-focus-opacity(mdc-states-opacity($mdc-select-ink-color, focus));
+  @include mdc-select-ink-color($mdc-select-ink-color);
+  @include mdc-select-label-color($mdc-select-label-color);
+  @include mdc-select-bottom-line-color($mdc-select-bottom-line-idle-color);
+  @include mdc-select-helper-text-color($mdc-select-helper-text-color);
+  @include mdc-select-shape-radius(medium);
 
-  @include mdc-typography(subheading2);
-  @include mdc-theme-prop(color, text-primary-on-light);
-  @include mdc-rtl-reflexive-box(padding, right, $dd-arrow-padding);
+  // Focused state colors
+  @include mdc-select-focused-bottom-line-color(primary);
+  @include mdc-select-focused-label-color($mdc-select-focused-label-color);
 
-  // Resets for <select> element
-  appearance: none;
-
-  &::-ms-expand {
-    display: none;
-  }
+  // Hover state colors
+  @include mdc-select-hover-bottom-line-color($mdc-select-bottom-line-hover-color);
+  @include mdc-floating-label-float-position($mdc-select-label-position-y);
+  @include mdc-select-floating-label_;
 
   display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  max-width: calc(100% - #{$dd-arrow-padding});
-  height: 32px;
-  transition:
-    mdc-animation-exit(border-bottom-color, 150ms),
-    mdc-animation-exit(background-color, 150ms);
-  border: none;
-  border-bottom: 1px solid rgba(black, .12);
-  border-radius: 0;
-  background: none;
-  background-repeat: no-repeat;
-  background-position: right center;
-
-  @include mdc-select-dd-arrow-svg-bg_;
-
-  font-family: Roboto, sans-serif;
-  font-size: .936rem;
-  cursor: pointer;
-
-  &:focus {
-    @include mdc-theme-prop(border-bottom-color, primary);
-
-    outline: none;
-    background-color: rgba(black, .06);
-  }
+  position: relative;
+  box-sizing: border-box;
+  height: $mdc-select-height;
+  overflow: hidden;
+  will-change: opacity, transform, color;
 
   @include mdc-rtl {
-    background-position: left center;
+    background-position: left 10px center;
   }
 
-  @include mdc-theme-dark {
-    @include mdc-theme-prop(color, text-primary-on-dark);
-    @include mdc-select-dd-arrow-svg-bg_(ffffff);
+  &__dropdown-icon {
+    @include mdc-select-dd-arrow-svg-bg_($mdc-select-dropdown-color, $mdc-select-dropdown-opacity);
+    @include mdc-rtl-reflexive(left, auto, right, 8px);
 
-    border-bottom: 1px solid rgba(white, .12);
+    position: absolute;
+    bottom: 16px;
+    width: 24px;
+    height: 24px;
+    transition: transform $mdc-select-dropdown-transition-duration $mdc-animation-standard-curve-timing-function;
+    pointer-events: none;
 
-    &:focus {
-      @include mdc-theme-prop(border-bottom-color, primary);
+    .mdc-select--focused & {
+      @include mdc-select-dd-arrow-svg-bg_(mdc-theme-prop-value(primary), 1);
 
-      background-color: rgba(white, .09);
+      transform: rotate(180deg) translateY(-5px);
+      transition: transform $mdc-select-dropdown-transition-duration $mdc-animation-standard-curve-timing-function;
     }
   }
 
-  &__menu {
-    position: fixed;
-    top: 0;
-    left: 0;
-    max-height: 100%;
-    transform-origin: center center;
-    overflow-y: scroll;
-    z-index: 4; // Should pop up above everything else. temporary-drawer is next highest at 3.
+  &__native-control {
+    padding-top: 20px;
   }
 
-  &__selected-text {
-    transition:
-      mdc-animation-exit(opacity, 125ms),
-      mdc-animation-exit(transform, 125ms);
-    white-space: nowrap;
-    overflow: hidden;
-  }
-}
-
-.mdc-select--open {
-  .mdc-select__selected-text {
-    transform: translateY(8px);
-    transition:
-      mdc-animation-enter(opacity, 125ms, 125ms),
-      mdc-animation-enter(transform, 125ms, 125ms);
-    opacity: 0;
-  }
-}
-
-.mdc-select--disabled,
-.mdc-select[disabled] {
-  @include mdc-theme-prop(color, text-disabled-on-light);
-  @include mdc-select-dd-arrow-svg-bg_(000000, .38);
-
-  border-bottom-style: dotted;
-  cursor: default;
-  pointer-events: none;
-  // Imitate native disabled functionality
-  user-select: none;
-}
-
-@each $sel in ("mdc-select--disabled", "mdc-select[disabled]") {
-  .#{$sel} {
-    @include mdc-theme-dark(".mdc-select", true) {
-      @include mdc-theme-prop(color, text-disabled-on-dark);
-      @include mdc-select-dd-arrow-svg-bg_(ffffff, .38);
-
-      border-bottom: 1px dotted rgba(white, .38);
+  @include mdc-select-focused-line-ripple_ {
+    &::after {
+      transform: scale(1, 2);
+      opacity: 1;
     }
   }
 }
 
-// postcss-bem-linter: end
+@include mdc-select-helper-text_;
+@include mdc-select-text-and-control_();
 
-.mdc-select__menu {
-  .mdc-list-item {
-    @include mdc-typography(subheading2);
-    @include mdc-theme-prop(color, text-secondary-on-light);
+.mdc-select--outlined {
+  @include mdc-select-outlined_;
+}
 
-    &[aria-selected="true"] {
-      @include mdc-theme-prop(color, text-primary-on-light);
-    }
+.mdc-select--invalid {
+  @include mdc-select-label-color($mdc-select-error-color);
+  @include mdc-select-bottom-line-color($mdc-select-error-color);
+  @include mdc-select-focused-bottom-line-color($mdc-select-error-color);
+  @include mdc-select-focused-label-color($mdc-select-error-color);
+  @include mdc-select-helper-text-validation-color($mdc-select-error-color);
 
-    @include mdc-theme-dark(".mdc-select") {
-      @include mdc-theme-prop(color, text-secondary-on-dark);
+  // Hover state colors
+  @include mdc-select-hover-bottom-line-color($mdc-select-error-color);
 
-      &[aria-selected="true"] {
-        @include mdc-theme-prop(color, text-primary-on-dark);
-      }
-    }
+  &.mdc-select--outlined {
+    @include mdc-select-outline-color($mdc-select-error-color);
+    @include mdc-select-hover-outline-color($mdc-select-error-color);
+    @include mdc-select-focused-outline-color($mdc-select-error-color);
   }
 
-  .mdc-list-group,
-  .mdc-list-group > .mdc-list-item:first-child {
-    margin-top: 12px;
+  .mdc-select__dropdown-icon {
+    @include mdc-select-dd-arrow-svg-bg_($mdc-select-error-color, 1);
   }
 
-  .mdc-list-group {
-    @include mdc-theme-prop(color, text-hint-on-light);
-
-    font-weight: normal;
-
-    .mdc-list-item {
-      @include mdc-theme-prop(color, text-primary-on-light);
-    }
-  }
-
-  @include mdc-theme-dark(".mdc-select") {
-    .mdc-list-group {
-      @include mdc-theme-prop(color, text-hint-on-dark);
-
-      .mdc-list-item {
-        @include mdc-theme-prop(color, text-primary-on-dark);
-      }
-    }
+  // stylelint-disable-next-line plugin/selector-bem-pattern
+  + .mdc-select-helper-text--validation-msg {
+    opacity: 1;
   }
 }
 
-// postcss-bem-linter: define multi-select
-.mdc-multi-select {
-  appearance: none;
-  width: 250px;
-  padding: 0;
-  border: 1px solid;
-
-  @include mdc-theme-prop(border-color, text-hint-on-light);
-
-  @include mdc-theme-dark {
-    @include mdc-theme-prop(border-color, text-hint-on-dark);
-  }
-
-  outline: none;
-
-  // stylelint-disable plugin/selector-bem-pattern
-  .mdc-list-group {
-    margin: 16px 0 0;
-    padding: 0 0 0 16px;
-
-    @include mdc-theme-prop(color, text-hint-on-light);
-
-    @include mdc-theme-dark {
-      @include mdc-theme-prop(color, text-hint-on-dark);
-    }
-
-    font-weight: normal;
-
-    &:last-child {
-      margin-bottom: 16px;
-    }
-
-    .mdc-list-divider {
-      margin-left: -16px;
-    }
-  }
-  // stylelint-enable plugin/selector-bem-pattern
-
-  // stylelint-disable plugin/selector-bem-pattern
-  .mdc-list-item {
-    margin: 0 0 0 -16px;
-    padding: 0 16px;
-
-    @include mdc-theme-prop(color, text-primary-on-light);
-
-    @include mdc-theme-dark {
-      @include mdc-theme-prop(color, text-primary-on-dark);
-    }
-
-    &:first-child {
-      margin-top: 12px;
-    }
-
-    &:last-child {
-      margin-bottom: 8px;
-    }
-  }
-  // stylelint-enable plugin/selector-bem-pattern
-
-  // stylelint-disable plugin/selector-bem-pattern
-  .mdc-list-item:checked {
-    background-color: rgba(black, .12);
-
-    @include mdc-theme-prop(background-color, background);
-
-    @include mdc-theme-dark {
-      @include mdc-theme-prop(background-color, text-primary-on-dark);
-    }
-  }
-
-  .mdc-list-divider {
-    margin-bottom: 8px;
-    padding-top: 8px;
-    font-size: 0;
-  }
-  // stylelint-enable plugin/selector-bem-pattern
-}
-
-.mdc-multi-select:focus .mdc-list-item:checked {
-  @include mdc-theme-prop(background-color, primary);
-
-  @include mdc-theme-dark {
-    @include mdc-theme-prop(background-color, text-primary-on-dark);
+.mdc-select--required {
+  // stylelint-disable-next-line plugin/selector-bem-pattern
+  .mdc-floating-label::after {
+    content: "*";
   }
 }
 
-// height for option elements cannot be controlled
-// with CSS. Use the font-size rule instead.
+.mdc-select--disabled {
+  @include mdc-select-disabled_;
+}
 
-// postcss-bem-linter: end
+.mdc-select--with-leading-icon {
+  @include mdc-select-with-leading-icon_;
+}
+
+.mdc-select__menu .mdc-list .mdc-list-item--selected {
+  @include mdc-theme-prop(color, on-surface);
+  @include mdc-states(on-surface);
+}
+
+@include mdc-floating-label-shake-keyframes(select-outlined-leading-icon, $mdc-select-outlined-label-position-y, $mdc-select-outlined-with-leading-icon-label-position-x);
+@include mdc-floating-label-shake-keyframes(select-outlined-leading-icon-rtl, $mdc-select-outlined-label-position-y, -$mdc-select-outlined-with-leading-icon-label-position-x);
+

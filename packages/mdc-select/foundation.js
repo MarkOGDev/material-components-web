@@ -1,248 +1,266 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
-import {MDCFoundation} from '@material/base';
-import {cssClasses} from './constants';
-import {MDCSimpleMenuFoundation} from '@material/menu';
+import {MDCFoundation} from '@material/base/index';
+/* eslint-disable no-unused-vars */
+import {MDCSelectAdapter, FoundationMapType} from './adapter';
+import {MDCSelectIconFoundation} from './icon/index';
+import {MDCSelectHelperTextFoundation} from './helper-text/index';
+/* eslint-enable no-unused-vars */
+import {cssClasses, strings, numbers} from './constants';
 
-const OPENER_KEYS = [
-  {key: 'ArrowUp', keyCode: 38, forType: 'keydown'},
-  {key: 'ArrowDown', keyCode: 40, forType: 'keydown'},
-  {key: 'Space', keyCode: 32, forType: 'keyup'},
-];
-
-export default class MDCSelectFoundation extends MDCFoundation {
+/**
+ * @extends {MDCFoundation<!MDCSelectAdapter>}
+ * @final
+ */
+class MDCSelectFoundation extends MDCFoundation {
+  /** @return enum {string} */
   static get cssClasses() {
     return cssClasses;
   }
 
+  /** @return enum {number} */
+  static get numbers() {
+    return numbers;
+  }
+
+  /** @return enum {string} */
+  static get strings() {
+    return strings;
+  }
+
+  /**
+   * {@see MDCSelectAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectAdapter}
+   */
   static get defaultAdapter() {
-    return {
+    return /** @type {!MDCSelectAdapter} */ ({
       addClass: (/* className: string */) => {},
       removeClass: (/* className: string */) => {},
-      setAttr: (/* attr: string, value: string */) => {},
-      rmAttr: (/* attr: string */) => {},
-      computeBoundingRect: () => /* {left: number, top: number} */ ({left: 0, top: 0}),
-      registerInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      deregisterInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      focus: () => {},
-      makeTabbable: () => {},
-      makeUntabbable: () => {},
-      getComputedStyleValue: (/* propertyName: string */) => /* string */ '',
-      setStyle: (/* propertyName: string, value: string */) => {},
-      create2dRenderingContext: () => /* {font: string, measureText: (string) => {width: number}} */ ({
-        font: '',
-        measureText: () => ({width: 0}),
-      }),
-      setMenuElStyle: (/* propertyName: string, value: string */) => {},
-      setMenuElAttr: (/* attr: string, value: string */) => {},
-      rmMenuElAttr: (/* attr: string */) => {},
-      getMenuElOffsetHeight: () => /* number */ 0,
-      openMenu: (/* focusIndex: number */) => {},
-      isMenuOpen: () => /* boolean */ false,
-      setSelectedTextContent: (/* textContent: string */) => {},
-      getNumberOfOptions: () => /* number */ 0,
-      getTextForOptionAtIndex: (/* index: number */) => /* string */ '',
-      getValueForOptionAtIndex: (/* index: number */) => /* string */ '',
-      setAttrForOptionAtIndex: (/* index: number, attr: string, value: string */) => {},
-      rmAttrForOptionAtIndex: (/* index: number, attr: string */) => {},
-      getOffsetTopForOptionAtIndex: (/* index: number */) => /* number */ 0,
-      registerMenuInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      deregisterMenuInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      hasClass: (/* className: string */) => false,
+      activateBottomLine: () => {},
+      deactivateBottomLine: () => {},
+      setValue: () => {},
+      getValue: () => {},
+      isRtl: () => false,
+      floatLabel: (/* value: boolean */) => {},
+      getLabelWidth: () => {},
+      hasOutline: () => false,
+      notchOutline: (/* labelWidth: number, isRtl: boolean */) => {},
+      closeOutline: () => {},
+      openMenu: () => {},
+      closeMenu: () => {},
+      isMenuOpen: () => {},
+      setSelectedIndex: () => {},
+      setDisabled: () => {},
+      setRippleCenter: () => {},
       notifyChange: () => {},
-      getWindowInnerHeight: () => /* number */ 0,
-    };
+      checkValidity: () => {},
+      setValid: () => {},
+    });
   }
 
-  constructor(adapter) {
+  /**
+   * @param {!MDCSelectAdapter} adapter
+   * @param {!FoundationMapType=} foundationMap Map from subcomponent names to their subfoundations.
+   */
+  constructor(adapter, foundationMap = /** @type {!FoundationMapType} */ ({})) {
     super(Object.assign(MDCSelectFoundation.defaultAdapter, adapter));
-    this.ctx_ = null;
-    this.selectedIndex_ = -1;
-    this.disabled_ = false;
-    this.displayHandler_ = (evt) => {
-      evt.preventDefault();
-      if (!this.adapter_.isMenuOpen()) {
-        this.open_();
-      }
-    };
-    this.displayViaKeyboardHandler_ = (evt) => this.handleDisplayViaKeyboard_(evt);
-    this.selectionHandler_ = ({detail}) => {
-      const {index} = detail;
-      this.close_();
-      if (index !== this.selectedIndex_) {
-        this.setSelectedIndex(index);
-        this.adapter_.notifyChange();
-      }
-    };
-    this.cancelHandler_ = () => {
-      this.close_();
-    };
-  }
 
-  init() {
-    this.ctx_ = this.adapter_.create2dRenderingContext();
-    this.adapter_.registerInteractionHandler('click', this.displayHandler_);
-    this.adapter_.registerInteractionHandler('keydown', this.displayViaKeyboardHandler_);
-    this.adapter_.registerInteractionHandler('keyup', this.displayViaKeyboardHandler_);
-    this.adapter_.registerMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
-    this.adapter_.registerMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
-    this.resize();
-  }
-
-  destroy() {
-    // Drop reference to context object to prevent potential leaks
-    this.ctx_ = null;
-    this.adapter_.deregisterInteractionHandler('click', this.displayHandler_);
-    this.adapter_.deregisterInteractionHandler('keydown', this.displayViaKeyboardHandler_);
-    this.adapter_.deregisterInteractionHandler('keyup', this.displayViaKeyboardHandler_);
-    this.adapter_.deregisterMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
-    this.adapter_.deregisterMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
-  }
-
-  getValue() {
-    return this.selectedIndex_ >= 0 ? this.adapter_.getValueForOptionAtIndex(this.selectedIndex_) : '';
-  }
-
-  getSelectedIndex() {
-    return this.selectedIndex_;
+    /** @type {!MDCSelectIconFoundation|undefined} */
+    this.leadingIcon_ = foundationMap.leadingIcon;
+    /** @type {!MDCSelectHelperTextFoundation|undefined} */
+    this.helperText_ = foundationMap.helperText;
   }
 
   setSelectedIndex(index) {
-    const prevSelectedIndex = this.selectedIndex_;
-    if (prevSelectedIndex >= 0) {
-      this.adapter_.rmAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected');
-    }
-
-    this.selectedIndex_ = index >= 0 && index < this.adapter_.getNumberOfOptions() ? index : -1;
-    let selectedTextContent = '';
-    if (this.selectedIndex_ >= 0) {
-      selectedTextContent = this.adapter_.getTextForOptionAtIndex(this.selectedIndex_).trim();
-      this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
-    }
-    this.adapter_.setSelectedTextContent(selectedTextContent);
+    this.adapter_.setSelectedIndex(index);
+    this.adapter_.closeMenu();
+    const didChange = true;
+    this.handleChange(didChange);
   }
 
-  isDisabled() {
-    return this.disabled_;
+  setValue(value) {
+    this.adapter_.setValue(value);
+    const didChange = true;
+    this.handleChange(didChange);
   }
 
-  setDisabled(disabled) {
-    const {DISABLED} = MDCSelectFoundation.cssClasses;
-    this.disabled_ = disabled;
-    if (this.disabled_) {
-      this.adapter_.addClass(DISABLED);
-      this.adapter_.setAttr('aria-disabled', 'true');
-      this.adapter_.makeUntabbable();
-    } else {
-      this.adapter_.removeClass(DISABLED);
-      this.adapter_.rmAttr('aria-disabled');
-      this.adapter_.makeTabbable();
+  getValue() {
+    return this.adapter_.getValue();
+  }
+
+  setDisabled(isDisabled) {
+    isDisabled ? this.adapter_.addClass(cssClasses.DISABLED) : this.adapter_.removeClass(cssClasses.DISABLED);
+    this.adapter_.setDisabled(isDisabled);
+    this.adapter_.closeMenu();
+
+    if (this.leadingIcon_) {
+      this.leadingIcon_.setDisabled(isDisabled);
     }
   }
 
-  resize() {
-    const font = this.adapter_.getComputedStyleValue('font');
-    const letterSpacing = parseFloat(this.adapter_.getComputedStyleValue('letter-spacing'));
-    if (font) {
-      this.ctx_.font = font;
-    } else {
-      const primaryFontFamily = this.adapter_.getComputedStyleValue('font-family').split(',')[0];
-      const fontSize = this.adapter_.getComputedStyleValue('font-size');
-      this.ctx_.font = `${fontSize} ${primaryFontFamily}`;
+  /**
+   * @param {string} content Sets the content of the helper text.
+   */
+  setHelperTextContent(content) {
+    if (this.helperText_) {
+      this.helperText_.setContent(content);
+    }
+  }
+
+  layout() {
+    const openNotch = this.getValue().length > 0;
+    this.notchOutline(openNotch);
+  }
+
+  /**
+   * Handles value changes, via change event or programmatic updates.
+   */
+  handleChange(didChange = true) {
+    const value = this.getValue();
+    const optionHasValue = value.length > 0;
+    const isRequired = this.adapter_.hasClass(cssClasses.REQUIRED);
+
+    this.notchOutline(optionHasValue);
+
+    if (!this.adapter_.hasClass(cssClasses.FOCUSED)) {
+      this.adapter_.floatLabel(optionHasValue);
     }
 
-    let maxTextLength = 0;
-    for (let i = 0, l = this.adapter_.getNumberOfOptions(); i < l; i++) {
-      const txt = this.adapter_.getTextForOptionAtIndex(i).trim();
-      const {width} = this.ctx_.measureText(txt);
-      const addedSpace = letterSpacing * txt.length;
-      maxTextLength = Math.max(maxTextLength, Math.ceil(width + addedSpace));
+    if (didChange) {
+      this.adapter_.notifyChange(value);
+
+      if (isRequired) {
+        this.setValid(this.isValid());
+        if (this.helperText_) {
+          this.helperText_.setValidity(this.isValid());
+        }
+      }
     }
-    this.adapter_.setStyle('width', `${maxTextLength}px`);
   }
 
-  open_() {
-    const {OPEN} = MDCSelectFoundation.cssClasses;
-    const focusIndex = this.selectedIndex_ < 0 ? 0 : this.selectedIndex_;
-    const {left, top, transformOrigin} = this.computeMenuStylesForOpenAtIndex_(focusIndex);
-
-    this.adapter_.setMenuElStyle('left', left);
-    this.adapter_.setMenuElStyle('top', top);
-    this.adapter_.setMenuElStyle('transform-origin', transformOrigin);
-    this.adapter_.addClass(OPEN);
-    this.adapter_.openMenu(focusIndex);
-  }
-
-  computeMenuStylesForOpenAtIndex_(index) {
-    const innerHeight = this.adapter_.getWindowInnerHeight();
-    const {left, top} = this.adapter_.computeBoundingRect();
-
-    this.adapter_.setMenuElAttr('aria-hidden', 'true');
-    this.adapter_.setMenuElStyle('display', 'block');
-    const menuHeight = this.adapter_.getMenuElOffsetHeight();
-    const itemOffsetTop = this.adapter_.getOffsetTopForOptionAtIndex(index);
-    this.adapter_.setMenuElStyle('display', '');
-    this.adapter_.rmMenuElAttr('aria-hidden');
-
-    let adjustedTop = top - itemOffsetTop;
-    const adjustedHeight = menuHeight - itemOffsetTop;
-    const overflowsTop = adjustedTop < 0;
-    const overflowsBottom = adjustedTop + adjustedHeight > innerHeight;
-    if (overflowsTop) {
-      adjustedTop = 0;
-    } else if (overflowsBottom) {
-      adjustedTop = Math.max(0, adjustedTop - adjustedHeight);
+  /**
+   * Handles focus events from select element.
+   */
+  handleFocus() {
+    this.adapter_.addClass(cssClasses.FOCUSED);
+    this.adapter_.floatLabel(true);
+    this.notchOutline(true);
+    this.adapter_.activateBottomLine();
+    if (this.helperText_) {
+      this.helperText_.showToScreenReader();
     }
-
-    return {
-      left: `${left}px`,
-      top: `${adjustedTop}px`,
-      transformOrigin: `center ${itemOffsetTop}px`,
-    };
   }
 
-  close_() {
-    const {OPEN} = MDCSelectFoundation.cssClasses;
-    this.adapter_.removeClass(OPEN);
-    this.adapter_.focus();
+  /**
+   * Handles blur events from select element.
+   */
+  handleBlur() {
+    if (this.adapter_.isMenuOpen()) return;
+    this.adapter_.removeClass(cssClasses.FOCUSED);
+    this.handleChange(false);
+    this.adapter_.deactivateBottomLine();
+
+    const isRequired = this.adapter_.hasClass(cssClasses.REQUIRED);
+
+    if (isRequired) {
+      this.setValid(this.isValid());
+      if (this.helperText_) {
+        this.helperText_.setValidity(this.isValid());
+      }
+    }
   }
 
-  handleDisplayViaKeyboard_(evt) {
-    // We use a hard-coded 2 instead of Event.AT_TARGET to avoid having to reference a browser
-    // global.
-    const EVENT_PHASE_AT_TARGET = 2;
-    if (evt.eventPhase !== EVENT_PHASE_AT_TARGET) {
+  handleClick(normalizedX) {
+    if (this.adapter_.isMenuOpen()) return;
+    this.adapter_.setRippleCenter(normalizedX);
+
+    this.adapter_.openMenu();
+  }
+
+  handleKeydown(event) {
+    if (this.adapter_.isMenuOpen()) return;
+
+    const isEnter = event.key === 'Enter' || event.keyCode === 13;
+    const isSpace = event.key === 'Space' || event.keyCode === 32;
+    const arrowUp = event.key === 'ArrowUp' || event.keyCode === 38;
+    const arrowDown = event.key === 'ArrowDown' || event.keyCode === 40;
+
+    if (this.adapter_.hasClass(cssClasses.FOCUSED) && (isEnter || isSpace || arrowUp || arrowDown)) {
+      this.adapter_.openMenu();
+      event.preventDefault();
+    }
+  }
+
+  /**
+   * Opens/closes the notched outline.
+   * @param {boolean} openNotch
+   */
+  notchOutline(openNotch) {
+    if (!this.adapter_.hasOutline()) {
       return;
     }
+    const isFocused = this.adapter_.hasClass(cssClasses.FOCUSED);
 
-    // Prevent pressing space down from scrolling the page
-    const isSpaceDown = evt.type === 'keydown' && (evt.key === 'Space' || evt.keyCode === 32);
-    if (isSpaceDown) {
-      evt.preventDefault();
-    }
-
-    const isOpenerKey = OPENER_KEYS.some(({key, keyCode, forType}) => {
-      return evt.type === forType && (evt.key === key || evt.keyCode === keyCode);
-    });
-    if (isOpenerKey) {
-      this.displayHandler_(evt);
+    if (openNotch) {
+      const labelScale = numbers.LABEL_SCALE;
+      const labelWidth = this.adapter_.getLabelWidth() * labelScale;
+      const isRtl = this.adapter_.isRtl();
+      this.adapter_.notchOutline(labelWidth, isRtl);
+    } else if (!isFocused) {
+      this.adapter_.closeOutline();
     }
   }
+
+  /**
+   * Sets the aria label of the leading icon.
+   * @param {string} label
+   */
+  setLeadingIconAriaLabel(label) {
+    if (this.leadingIcon_) {
+      this.leadingIcon_.setAriaLabel(label);
+    }
+  }
+
+  /**
+   * Sets the text content of the leading icon.
+   * @param {string} content
+   */
+  setLeadingIconContent(content) {
+    if (this.leadingIcon_) {
+      this.leadingIcon_.setContent(content);
+    }
+  }
+
+  setValid(isValid) {
+    this.adapter_.setValid(isValid);
+  }
+
+  isValid() {
+    return this.adapter_.checkValidity();
+  }
 }
+
+export default MDCSelectFoundation;

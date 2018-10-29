@@ -1,196 +1,80 @@
 //
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google Inc.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 //
 
-@import "@material/animation/variables";
-@import "@material/animation/functions";
-@import "@material/elevation/mixins";
+@import "@material/ripple/common";
 @import "@material/ripple/mixins";
-@import "@material/theme/mixins";
-@import "@material/typography/mixins";
+@import "./mixins";
+@import "./variables";
 
 // postcss-bem-linter: define button
-
 .mdc-button {
-  @include mdc-ripple-base;
-  @include mdc-ripple-bg((pseudo: "::before"));
-  @include mdc-ripple-fg((pseudo: "::after"));
-  @include mdc-typography(body2);
-  @include mdc-theme-prop(color, text-primary-on-light);
+  @include mdc-button-base_;
+  @include mdc-button-shape-radius(small);
+  @include mdc-button-container-fill-color(transparent);
+  @include mdc-button-ink-color(primary);
+  @include mdc-states(primary);
 
-  display: inline-block;
-  position: relative;
-  min-width: 64px;
-  height: 36px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 2px;
-  outline: none;
-  background: transparent;
-  font-size: 14px; // Override font to specifically be px as spec defined pt
-  font-weight: 500;
-  line-height: 36px; // Override line-height so text aligns centered
-  text-align: center;
-  text-decoration: none;
-  text-transform: uppercase;
-  overflow: hidden;
-  vertical-align: middle;
-  user-select: none;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-
-  &:not(.mdc-ripple-upgraded) {
-    -webkit-tap-highlight-color: rgba(black, .18);
+  // The icon CSS class overrides styles defined in the .material-icons CSS
+  // class, which is loaded separately so the order of CSS definitions is not
+  // guaranteed. Therefore, increase specifity by nesting this class to ensure
+  // overrides apply.
+  .mdc-button__icon {
+    @include mdc-button__icon_;
   }
 
-  @include mdc-theme-dark {
-    @include mdc-ripple-base;
-    @include mdc-ripple-bg((pseudo: "::before", base-color: white, opacity: .14));
-    @include mdc-ripple-fg((pseudo: "::after", base-color: white, opacity: .14));
-    @include mdc-theme-prop(color, text-primary-on-dark);
-
-    &:not(.mdc-ripple-upgraded) {
-      -webkit-tap-highlight-color: rgba(white, .18);
-    }
-  }
-
-  @each $theme-style in (primary, accent) {
-    &.mdc-button--#{$theme-style} {
-      @include mdc-ripple-base;
-      @include mdc-ripple-bg((pseudo: "::before", theme-style: $theme-style, opacity: .12));
-      @include mdc-ripple-fg((pseudo: "::after", theme-style: $theme-style, opacity: .12));
-    }
-  }
-
-  // postcss-bem-linter: ignore
-  &:active {
-    outline: none;
-  }
-
-  &:hover {
-    cursor: pointer;
-  }
-
-  &::-moz-focus-inner {
-    padding: 0;
-    border: 0;
-  }
-
-  &--dense {
-    height: 32px;
-    font-size: .8125rem; // 13sp
-    line-height: 32px;
-  }
-
-  // TODO(cristobalchao): Disable ink wash on hover and alter elevation instead for raised surfaces.
-  &--raised {
-    @include mdc-elevation(2);
-    @include mdc-elevation-transition;
-
-    min-width: 88px;
-
-    &:active {
-      @include mdc-elevation(8);
-    }
-
-    @each $theme-style in (primary, accent) {
-      &.mdc-button--#{$theme-style} {
-        @include mdc-ripple-base;
-        @include mdc-ripple-bg((pseudo: "::before", base-color: white, opacity: .14));
-        @include mdc-ripple-fg((pseudo: "::after", base-color: white, opacity: .14));
-      }
-    }
-
-    @include mdc-theme-dark(".mdc-button") {
-      @include mdc-theme-prop(background-color, primary);
-
-      // postcss-bem-linter: ignore
-      &::before {
-        // We are explicitly not fully adhering to Material Design here.
-        // This should be the 700-shade when active instead of a black shade.
-        // Due to the complexity involved in adhering fully it is being ignored.
-        // Instead re-using the existing architecture for shading works just fine.
-        color: black;
-      }
-    }
-  }
-
-  &--primary {
-    @include mdc-theme-prop(color, primary);
-
-    @include mdc-theme-dark(".mdc-button") {
-      @include mdc-theme-prop(color, primary);
-    }
-
-    // postcss-bem-linter: ignore
-    &.mdc-button--raised {
-      @include mdc-theme-prop(background-color, primary);
-      @include mdc-theme-prop(color, text-primary-on-primary);
-
-      // postcss-bem-linter: ignore
-      &::before {
-        color: black;
-      }
-    }
-  }
-
-  &--accent {
-    @include mdc-theme-prop(color, accent);
-
-    @include mdc-theme-dark(".mdc-button") {
-      @include mdc-theme-prop(color, accent);
-    }
-
-    // postcss-bem-linter: ignore
-    &.mdc-button--raised {
-      @include mdc-theme-prop(background-color, accent);
-      @include mdc-theme-prop(color, text-primary-on-accent);
-
-      // postcss-bem-linter: ignore
-      &::before {
-        color: black;
-      }
-    }
-  }
-
-  &--compact {
-    padding: 0 8px;
-  }
-
-  fieldset:disabled &,
-  &:disabled {
-    color: rgba(0, 0, 0, .26);
-    cursor: default;
-    pointer-events: none;
-
-    @include mdc-theme-dark(".mdc-button") {
-      color: rgba(255, 255, 255, .3);
-    }
-  }
-
-  fieldset:disabled &--raised,
-  &--raised:disabled {
-    @include mdc-elevation(0);
-
-    background-color: rgba(0, 0, 0, .12);
-    pointer-events: none;
-
-    @include mdc-theme-dark(".mdc-button") {
-      background-color: rgba(255, 255, 255, .12);
-    }
+  // stylelint-disable-next-line selector-no-qualifying-type
+  svg.mdc-button__icon {
+    @include mdc-button__icon-svg_;
   }
 }
 
+.mdc-button--raised,
+.mdc-button--unelevated,
+.mdc-button--outlined {
+  .mdc-button__icon {
+    // Icons inside contained buttons have different styles due to increased button padding
+    @include mdc-button__icon-contained_;
+  }
+}
+
+.mdc-button--raised,
+.mdc-button--unelevated {
+  @include mdc-button--filled_;
+  @include mdc-button-container-fill-color(primary);
+  @include mdc-button-ink-color(on-primary);
+  @include mdc-states(on-primary);
+}
+
+.mdc-button--raised {
+  @include mdc-button--raised_;
+}
+
+.mdc-button--outlined {
+  @include mdc-button--outlined_;
+  @include mdc-button-outline-width(2px);
+  @include mdc-button-outline-color(primary);
+}
+
+.mdc-button--dense {
+  @include mdc-button--dense_;
+}
 // postcss-bem-linter: end

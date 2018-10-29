@@ -7,272 +7,421 @@ path: /docs/getting-started/
 
 # Getting Started
 
-This guide will help you get started using MDC-Web on your own sites and within your own projects.
+## Quick Start (CDN)
 
-> If you are interested in integrating MDC-Web into a framework, or building a component library for
-your framework that wraps MDC-Web, check out our [framework integration guide](./integrating-into-frameworks.md).
+To try Material Components for the web with minimal setup, load the precompiled all-in-one CSS and JS bundles from unpkg:
 
-## MDC-Web quick start: building a simple greeting app
-
-The best way to learn any new technology is to get your hands dirty and build something with it, so
-that is what we will do here!  You will be building a simple greeting page which lets you enter a name and greets you as such. Here is the [finished example](https://plnkr.co/edit/ahd84pIgOF7OTKgavvPP?p=preview).
-
-As you go through this guide, we encourage you to code along with it. By the end, you will have
-learned the fundamentals incorporating MDC-Web into simple sites, as well as worked with some of the
-components we have to offer.
-
-### Setting up the project
-
-Create a directory for the project where we'll serve our application out of.
-
-```
-mkdir greeting-app
-cd greeting-app
+```html
+https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css
+https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js
 ```
 
-Additionally, if you have [NodeJS](https://nodejs.org) installed, we recommend installing and using
-[live-server](http://tapiov.net/live-server/) as your local development server. Live-server is
-simple to use and will reload the page whenever you make a change to your HTML. You can install it
-via [npm](https://www.npmjs.com/) by typing the following:
+Then include MDC markup...
 
-```
-npm install --global live-server
+```html
+<button class="foo-button mdc-button">Button</button>
 ```
 
-> NOTE: You may need to use `sudo` to install npm packages globally, depending on how your node
-installation is configured.
+...and instantiate JavaScript:
 
-The `--global` flag tells npm to install the package globally, so that the `live-server` program
-will be available on your `$PATH`.
+```js
+mdc.ripple.MDCRipple.attachTo(document.querySelector('.foo-button'));
+```
 
-### Creating the skeleton index.html file
+## Installing Locally
 
-Now that you have a directory set up, create a simple `index.html` file, and include
-the assets needed for MDC-Web. Put the following within `index.html` in the `greeting-app` directory:
+Material Components for the web can be installed locally using npm. It is available as a single all-in-one package:
+
+```
+npm i material-components-web
+```
+
+...or as individual components:
+
+```
+npm i @material/button @material/ripple
+```
+
+Each package provides precompiled CSS and JS under its `dist` folder. The precompiled JS is converted to UMD format and is consumable directly by browsers or within any workflow that expects to consume ES5. Referencing `@material/foo` within a Node.js context will automatically reference the precompiled JS under `dist`.
+
+However, for optimal results, we recommend consuming MDC Web's ES2015 modules and Sass directly. This is outlined in the steps below.
+
+## Using MDC Web with Sass and ES2015
+
+This section walks through how to [install MDC Web Node modules](https://www.npmjs.com/org/material), and bundle the Sass and JavaScript from those Node modules in your [webpack](https://webpack.js.org/) configuration.
+
+> Note: This guide assumes you have Node.js and npm installed locally.
+
+### Step 1: Webpack with Sass
+
+We’re going to use `webpack-dev-server` to demonstrate how webpack bundles our Sass and JavaScript. First, run `npm init` to create a `package.json` file. When complete, add the `start` property to the `scripts` section.
+
+```json
+{
+  "scripts": {
+    "start": "webpack-dev-server"
+  }
+}
+```
+
+You’ll need all of these Node dependencies:
+- [webpack](https://www.npmjs.com/package/webpack): Bundles Sass and JavaScript
+- [webpack-dev-server](https://www.npmjs.com/package/webpack-dev-server): Development server
+- [sass-loader](https://www.npmjs.com/package/sass-loader): Loads a Sass file and compiles it to CSS
+- [node-sass](https://www.npmjs.com/package/node-sass): Provides binding for Node.js to Sass, peer dependency to sass-loader
+- [css-loader](https://www.npmjs.com/package/css-loader): Resolves CSS @import and url() paths
+- [extract-loader](https://github.com/peerigon/extract-loader): Extracts the CSS into a `.css` file
+- [file-loader](https://github.com/webpack-contrib/file-loader): Serves the `.css` file as a public URL
+
+You can install all of them by running this command:
+
+```
+npm install --save-dev webpack@3 webpack-dev-server@2 css-loader sass-loader node-sass extract-loader file-loader
+```
+
+> Note: We recommend using webpack 3, because we're still investigating using webpack 4. We also recommend you use webpack-dev-server 2, because this works with webpack 3.
+
+In order to demonstrate how webpack bundles our Sass, you’ll need an `index.html`. This HTML file needs to include CSS. The CSS is generated by sass-loader, which compiles Sass files into CSS. The CSS is extracted into a `.css` file by extract-loader. Create this simple “hello world” `index.html`:
 
 ```html
 <!DOCTYPE html>
-<html class="mdc-typography">
+<html>
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Greeting App</title>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+    <link rel="stylesheet" href="bundle.css">
   </head>
-  <body>
-    <h1 class="mdc-typography--display1">Hello, World!</h1>
-    <button type="button" class="mdc-button mdc-button--raised mdc-button--primary">
-      Press Me
-    </button>
-  </body>
+  <body>Hello World</body>
 </html>
 ```
 
-View this page by running `live-server` (or the web server of your choice) within the
-`greeting-app` directory.
+And create a simple Sass file called `app.scss`:
 
-If you're using `live-server`, this will open up your browser to the URL which is serving our
-`index.html` file. You can leave `live-server` running for the duration of this guide. If you're
-not using `live-server`, navigate to the web server's base URL and view the page. Also be sure to
-refresh after every change you make!
-
-Let's take a look at a few aspects of the above HTML.
-
-* **No JavaScript necessary (yet)** - Because we aren't using any dynamic components, we only need
-  to include the MDC-Web CSS, so that we can apply the proper CSS classes to our elements. With MDC-Web,
-  JavaScript is only necessary for dynamic components whose UI needs to be made aware of events
-  happening on the page. As we develop our greeting app, we'll
-  add in the necessary JavaScript.
-* **No automatic DOM rendering** - For all components, MDC-Web does not render _any_ DOM elements
-  itself. MDC-Web is similar to [Bootstrap](http://getbootstrap.com/) in this respect; it expects you to render the DOM using the proper CSS classes. This avoids a litany of problems for integrating MDC-Web into
-  complex applications.
-* **Elements are not natively styled** - Notice how above, we give the `<html>` element a class of
-  `mdc-typography`, the `<h1>` element a class of `mdc-typography--display1`, and the button a class
-  of `mdc-button`, along with multiple _modifier classes_. MDC-Web _never_ makes any assumptions about
-  which elements are being used for our components, instead relying on CSS classes for maximum
-  flexibility. MDC-Web's CSS class names follow a slightly modified version of the [BEM](http://getbem.com/) system.
-
-### Adding in JavaScript for dynamic components
-
-Now that we've gotten the gist of MDC-Web, let us continue to build our greeting app.
-
-The app consists of two input fields and a submit button. Material Design text input
-fields and buttons contain a lot of dynamism and animation that require the usage of JavaScript.
-
-Replace the contents of the `<body>` tag in `index.html` with the following:
-
-```html
-<main>
-  <h1 class="mdc-typography--display1">Tell us about yourself!</h1>
-
-  <form action="#" id="greeting-form">
-    <div>
-      <div class="mdc-form-field">
-        <div class="mdc-textfield" data-mdc-auto-init="MDCTextfield">
-          <input id="firstname" type="text" class="mdc-textfield__input">
-          <label for="firstname" class="mdc-textfield__label">
-            First Name
-          </label>
-        </div>
-      </div>
-
-      <div class="mdc-form-field">
-        <div class="mdc-textfield" data-mdc-auto-init="MDCTextfield">
-          <input id="lastname" type="text" class="mdc-textfield__input">
-          <label for="lastname" class="mdc-textfield__label">
-            Last Name
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <button type="submit"
-            class="mdc-button
-                   mdc-button--raised
-                   mdc-button--primary
-                   mdc-ripple-surface"
-            data-mdc-auto-init="MDCRipple">
-      Print Greeting
-    </button>
-  </form>
-
-  <!-- The p element below is where we'll eventually output our greeting -->
-  <p class="mdc-typography--headline" id="greeting"></p>
-</main>
-
-<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
-<script>window.mdc.autoInit();</script>
+```scss
+body {
+  color: blue;
+}
 ```
 
-Once the changes are made, return to your browser and you will see two very nicely styled form
-fields along with a Material Design styled button. The button shows an ink ripple effect when pressed. For now, the ripple is a fairly subtle that will be addressed shortly.
+Then configure webpack to convert `app.scss` into `bundle.css`. For that you need a new `webpack.config.js` file:
 
-Two important points that are demonstrated in the code that was added:
-
-#### MDC-Web does not instantiate any components automatically
-
-This avoids the headaches involved with lifecycle handlers management in Material Design Lite (the predecessor to MDC-Web).
-Initialization is done through the `data-mdc-auto-init` attributes added
-to those elements that are initialized when mdc.autoInit() is called.
-
-When `mdc.autoInit()` is called, it looks for all elements with a `data-mdc-auto-init` attribute,
-and attaches the MDC-Web JS Component with the given class name to that element.. So when it sees `MDCTextfield`,
-it instantiates a [MDCTextfield](../packages/mdc-textfield) instance to the corresponding elements.
-It does the same thing for the button, attaching a [MDCRipple](../packages/mdc-ripple) instance to the element.
-
-It is worth noting that `mdc.autoInit` is provided _purely_ as a convenience function, and is not
-required to actually use the components. It is, however, the simplest way to get up and running
-quickly, and recommended for static sites that use the comprehensive `material-components-web` library.
-
-
-#### All components are modular
-
-Although when you initially set up this project you installed the `material-components-web` package, that
-package is simply a thin wrapper around individual component packages, such as [mdc-typography](../packages/mdc-typography), [mdc-button](../packages/mdc-button), [mdc-textfield](../packages/mdc-textfield), and [mdc-ripple](../packages/mdc-ripple).
-Even the `autoInit()` function [lives in its own package](../packages/mdc-auto-init), which the
-`material-components-web` package uses to register all of the individual components to their names used
-within `data-mdc-auto-init`. Each component can be used as a standalone package, and can be mixed
-and matched at will. This allows for custom builds requiring the minimum possible amount of CSS/JS
-code. It also means that MDC-Web works extremely well with module loading systems and modern
-front-end toolchains.
-
-### Adding the business logic
-
-Finally, let's add our (very simple) business logic to the bottom of the page, which intercepts the
-form submission and uses the input field values to print out an appropriate greeting. Add the
-following below the last `<script>` tag within the `<body>`:
-
-```html
-<script>
-  document.getElementById('greeting-form').addEventListener('submit', function(evt) {
-    evt.preventDefault();
-    var firstname = evt.target.elements.firstname.value;
-    var lastname = evt.target.elements.lastname.value;
-    var greeting = 'Hello';
-    if (firstname || lastname) {
-      greeting += ', ';
-      if (firstname && lastname) {
-        greeting += firstname + ' ' + lastname;
-      } else if (lastname) {
-        greeting += 'Mx. ' + lastname;
-      } else {
-        greeting += firstname;
+```js
+module.exports = [{
+  entry: './app.scss',
+  output: {
+    // This is necessary for webpack to compile
+    // But we never use style-bundle.js
+    filename: 'style-bundle.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.scss$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: 'bundle.css',
+            },
+          },
+          { loader: 'extract-loader' },
+          { loader: 'css-loader' },
+          { loader: 'sass-loader' },
+        ]
       }
-    }
-    greeting += '!';
-
-    document.getElementById('greeting').textContent = greeting;
-  });
-</script>
+    ]
+  },
+}];
 ```
 
-When you save the file and the page reloads, you should be able to type your name into the form,
-hit the button, and get a pleasant greeting :wave:
+To test your webpack configuration, run:
 
-### Changing the theme
+```
+npm start
+```
 
-You may have noticed that the button background, as well as the label and underline on focused text
-input fields, defaults to the Indigo 500 (`#673AB7`) color from the [Material Design color palette](https://material.io/guidelines/style/color.html#color-color-palette).
-This is part of the default theme that ships with MDC-Web; it uses Indigo 500 for a primary color, and
-Pink A200 (`#FF4081`) for an accent color. Let's change the theme's primary color.
+And open http://localhost:8080 in a browser. You should see a blue “Hello World”.
 
-A common misconception when implementing Material Design is that the colors you use _must_ come from
-the Material Design color palette. This is not true at all. The only defining guideline for color within Material
-Design is that it has "bold hues juxtaposed with muted environments, deep shadows, and bright
-highlights". Let's change our theme's primary color to `#0E4EAD`, the "Afternoon_Skyblue" color from
-the [Deep_Skyblues Colourlovers Palette](http://www.colourlovers.com/palette/334208/Deep_Skyblues).
+<img src="hello_world.png" alt="Hello World" width="92" height="34">
 
-The easiest way to change the theme of an MDC-Web application is via [CSS Variables](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_variables). Simply add the
-following to the `<head>` tag of `index.html`:
+### Step 2: Include CSS for a component
+
+Now that you have webpack configured to compile Sass into CSS, let's include the Sass files for the Material Design button. First install the Node dependency:
+
+```
+npm install --save-dev @material/button
+```
+
+We need to tell our `app.scss` to import the Sass files for `@material/button`. We can also use Sass mixins to customize the button. Replace your “hello world” version of `app.scss` with this code:
+
+```scss
+@import "@material/button/mdc-button";
+
+.foo-button {
+  @include mdc-button-ink-color(teal);
+  @include mdc-states(teal);
+}
+```
+
+We also need to configure sass-loader to understand the `@material` imports used by MDC Web. Update your `webpack.config.js` by changing `{ loader: 'sass-loader' }` to:
+
+```js
+{
+  loader: 'sass-loader',
+  options: {
+    includePaths: ['./node_modules']
+  }
+}
+```
+
+> Note: Configuring `includePaths` should suffice for most cases where all MDC Web packages are kept up-to-date
+> together. If you encounter problems compiling Sass due to nested `node_modules` directories, see the
+> [Appendix](#appendix-configuring-a-sass-importer-for-nested-node_modules) below on how to configure a custom importer
+> instead.
+
+In order to add vendor-specific styles to the Sass files, we need to configure `autoprefixer` through PostCSS.
+
+You'll need all of these Node dependencies:
+- [autoprefixer](https://www.npmjs.com/package/autoprefixer): Parses CSS and adds vendor prefixes to CSS rules
+- [postcss-loader](https://github.com/postcss/postcss-loader): Loader for Webpack used in conjunction with autoprefixer
+
+You can install all of them by running this command:
+
+```
+npm install --save-dev autoprefixer postcss-loader
+```
+
+Add `autoprefixer` at the top of your `webpack.config.js`:
+
+```js
+const autoprefixer = require('autoprefixer');
+```
+
+Then add `postcss-loader`, using `autoprefixer` as a plugin:
+
+```js
+{ loader: 'extract-loader' },
+{ loader: 'css-loader' },
+{
+  loader: 'postcss-loader',
+  options: {
+     plugins: () => [autoprefixer()]
+  }
+},
+{
+  loader: 'sass-loader',
+  options: {
+    includePaths: ['./node_modules']
+  }
+},
+```
+
+`@material/button` has [documentation](../packages/mdc-button/README.md) about the required HTML for a button. Update your `index.html` to include the MDC Button markup, and add the `foo-button` class to the element:
 
 ```html
-<style>
-  :root {
-    --mdc-theme-primary: #0e4ead;
+<body>
+  <button class="foo-button mdc-button">
+    Button
+  </button>
+</body>
+```
+
+Now run `npm start` again and open http://localhost:8080. You should see a Material Design button!
+
+<img src="button.png" alt="Button" width="90" height="36">
+
+### Step 3: Webpack with ES2015
+
+We need to configure webpack to bundle ES2015 JavaScript into standard JavaScript, through [babel](https://babeljs.io). You’ll need all of these dependencies:
+
+- [babel-core](https://www.npmjs.com/package/babel-core)
+- [babel-loader](https://www.npmjs.com/package/babel-loader): Compiles JavaScript files using babel
+- [babel-preset-es2015](https://www.npmjs.com/package/babel-preset-es2015): Preset for compiling es2015
+- [babel-plugin-transform-object-assign](http://npmjs.org/package/babel-plugin-transform-object-assign), for IE 11 support
+
+You can install all of them by running this command:
+
+```
+npm install --save-dev babel-core@6 babel-loader@7 babel-preset-es2015 babel-plugin-transform-object-assign
+```
+
+In order to demonstrate how webpack bundles our JavaScript, you’ll need to update `index.html` to include JavaScript. The JavaScript file is generated by babel-loader, which compiles ES2015 files into JavaScript. Add this script tag to `index.html` before the closing `</body>` tag:
+
+```html
+<script src="bundle.js" async></script>
+```
+
+And create a simple ES2015 file called `app.js`:
+
+```js
+console.log('hello world');
+```
+
+Then configure webpack to convert `app.js` into `bundle.js` by modifying the following properties in the `webpack.config.js` file:
+
+1. Change entry to an array containing both `app.scss` and `app.js`:
+   ```js
+   entry: ['./app.scss', './app.js']
+   ```
+2. Change `output.filename` to be `bundle.js`:
+   ```js
+   output: {
+     filename: 'bundle.js',
+   }
+   ```
+3. Add the `babel-loader` object to the rules array after the `scss-loader` object:
+   ```js
+   {
+     test: /\.js$/,
+     loader: 'babel-loader',
+     query: {
+       presets: ['es2015'],
+       plugins: ['transform-object-assign']
+     },
+   }
+   ```
+
+The final `webpack.config.js` file should look like this:
+
+```js
+const autoprefixer = require('autoprefixer');
+
+module.exports = {
+  entry: ['./app.scss', './app.js'],
+  output: {
+    filename: 'bundle.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.scss$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: 'bundle.css',
+            },
+          },
+          {loader: 'extract-loader'},
+          {loader: 'css-loader'},
+          {loader: 'postcss-loader',
+            options: {
+              plugins: () => [autoprefixer()],
+            },
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              includePaths: ['./node_modules'],
+            },
+          }
+        ],
+      },
+      {
+        test: /\.js$/,
+        loader: 'babel-loader',
+        query: {
+          presets: ['es2015'],
+          plugins: ['transform-object-assign']
+        },
+      }
+    ],
+  },
+};
+```
+
+Now run `npm start` again and open http://localhost:8080. You should see a “hello world” in the console.
+
+### Step 4: Include JavaScript for a component
+
+Now that you have webpack configured to compile ES2015 into JavaScript, let's include the ES2015 files from the Material Design ripple. First install the Node dependency:
+
+```
+npm install --save-dev @material/ripple
+```
+
+We need to tell our `app.js` to import the ES2015 file for `@material/ripple`. We also need to initialize an `MDCRipple` with a DOM element. Replace your “hello world” version of `app.js` with this code:
+
+```js
+import {MDCRipple} from '@material/ripple/index';
+const ripple = new MDCRipple(document.querySelector('.foo-button'));
+```
+
+> Note: We explicitly reference `index` within each MDC Web package in order to import the ES2015 source directly.
+> This allows for tree-shaking and avoiding duplicate code for common dependencies (e.g. Ripple).
+> However, it requires transpiling the MDC Web modules using the tools installed in Step 3.
+
+Now run `npm start` again and open http://localhost:8080. You should see a Material Design ripple on the button!
+
+<img src="button_with_ripple.png" alt="Button with Ripple" width="90" height="36">
+
+### Step 5: Build Assets for Production
+
+Up to this point, we've used `webpack-dev-server` to preview our work with live updates. However, `webpack-dev-server` is not intended for production use. Instead, we should generate production-ready assets.
+
+Add another script to `package.json`:
+
+```json
+  "scripts": {
+    "build": "webpack -p",
+    "start": "webpack-dev-server"
   }
-</style>
 ```
 
-If you are using any modern browser besides Edge (which is currently [working on it](https://developer.microsoft.com/en-us/microsoft-edge/platform/status/csscustompropertiesakacssvariables/)), you'll see that the button background as well as the focused underline and label on text
-fields are now a nice, dark shade of blue.
+Now run the following command:
 
-> Note that using CSS Variables is just one way of theming using MDC-Web. Check out our
-[theming documentation](./theming.md) for more info.
+```
+npm run build
+```
 
-### Finishing touches: adding custom styles
+This will produce `bundle.js` and `bundle.css` in the project directory. These contain the compiled CSS and transpiled JS, which you can then copy into a directory served by any web server.
 
-Every site is different, and we cannot hope to build a user interface library that
-anticipates every design choice a user may want.  MDC-Web uses plain old CSS to make it trivial to
-customize and modify its styles to your liking. Let's change the ripple color to be a
-more opaque shade of white, as well as add some auxiliary styles to bump up the vertical spacing
-between the form fields and the submit button.
+## Appendix: Configuring a Sass Importer for Nested node_modules
 
-Add the following to the `<style>` tag within `<head>`:
+It is possible to end up with nested `node_modules` folders if you have dependencies on conflicting versions of
+individual MDC Web packages. This may lead to errors when attempting to compile Sass with the `includePaths`
+configuration shown above, since Sass is only scanning for `@material` packages under the top-level `node_modules`
+directory.
 
-```css
-.mdc-ripple-surface.mdc-ripple-upgraded.mdc-button--primary::before,
-.mdc-ripple-surface.mdc-ripple-upgraded.mdc-button--primary::after {
-  background-color: rgba(255, 255, 255, .2);
+Alternatively, you can implement an importer as follows, which makes use of node's module resolution algorithm to find
+the dependency nearest to the file that imported it. Add the following code near the top of your `webpack.config.js`
+(before the `exports`):
+
+```js
+const path = require('path');
+
+function tryResolve_(url, sourceFilename) {
+  // Put require.resolve in a try/catch to avoid node-sass failing with cryptic libsass errors
+  // when the importer throws
+  try {
+    return require.resolve(url, {paths: [path.dirname(sourceFilename)]});
+  } catch (e) {
+    return '';
+  }
 }
 
-#greeting-form > button {
-  margin-top: 8px;
+function tryResolveScss(url, sourceFilename) {
+  // Support omission of .scss and leading _
+  const normalizedUrl = url.endsWith('.scss') ? url : `${url}.scss`;
+  return tryResolve_(normalizedUrl, sourceFilename) ||
+    tryResolve_(path.join(path.dirname(normalizedUrl), `_${path.basename(normalizedUrl)}`),
+      sourceFilename);
+}
+
+function materialImporter(url, prev) {
+  if (url.startsWith('@material')) {
+    const resolved = tryResolveScss(url, prev);
+    return {file: resolved || url};
+  }
+  return {file: url};
 }
 ```
 
-Congrats! You've built your first MDC-Web app! In the process, you've learned the basics of MDC-Web,
-how to easily add components to a page, and how to customize and theme MDC-Web to your liking.
+Then update your `sass-loader` config to the following:
 
-## Next steps
-
-If you're looking to incorporate MDC-Web Components into a framework like Angular or React, check our
-[framework integration guide](./integrating-into-frameworks.md). You can also take a look at our
-[framework examples](../framework-examples) directory which contains examples integrating MDC-Web components into popular
-front-end frameworks. It also shows how you can use our source ES2015 and SCSS files directly within
-your own code, for maximum flexibility, modularity, and code size reduction.
-
-If you'd like to contribute to
-MDC-Web and build your own components, or extend one of ours to fit your own purposes, check out our
-guide on [authoring components](./authoring-components.md).
+```js
+{
+  loader: 'sass-loader',
+  options: {
+    importer: materialImporter
+  },
+}
+```

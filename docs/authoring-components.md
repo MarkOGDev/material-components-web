@@ -7,8 +7,8 @@ path: /docs/authoring-components/
 
 # Authoring Components
 
-This document serves as a reference for developing components either directly for MDC-Web or
-external components that would like to interface with the MDC-Web ecosystem.
+This document serves as a reference for developing components either directly for MDC Web or
+external components that would like to interface with the MDC Web ecosystem.
 
 > Please note that since this project is still in its early stages of development, these practices
 may be subject to change. They will stabilize as we near towards a full release.
@@ -31,7 +31,7 @@ may be subject to change. They will stabilize as we near towards a full release.
   * [Design adapter interfaces to be simple and intuitive](#design-adapter-interfaces-to-be-simple-and-intuitive)
   * [Do not reference host objects within foundation code.](#do-not-reference-host-objects-within-foundation-code)
   * [Clean up all references on destruction](#clean-up-all-references-on-destruction)
-* [Authoring components for MDC-Web](#authoring-components-for-mdc-web)
+* [Authoring components for MDC Web](#authoring-components-for-mdc-web)
   * [File Structure](#file-structure)
   * [License Stanzas](#license-stanzas)
   * [Scss](#scss)
@@ -57,18 +57,18 @@ may be subject to change. They will stabilize as we near towards a full release.
 
 The first two sections of this document describe general guidelines for how to think about building
 a component, as well as criteria for what makes a good component. Anyone interested in building
-components either directly for MDC-Web or as an external component that plays well within the
-MDC-Web ecosystem should find it useful. The third section talks about authoring components
-specifically for MDC-Web, and is best suited for those looking to contribute directly to the
+components either directly for MDC Web or as an external component that plays well within the
+MDC Web ecosystem should find it useful. The third section talks about authoring components
+specifically for MDC Web, and is best suited for those looking to contribute directly to the
 project.
 
 Note that this document assumes you are familiar with the library and its
-[architecture](./architecture.md). If that is not the case, we recommend reading that first. If you
-are brand new to the project, we recommend starting with our [general developer documentation](./developer.md).
+[architecture](code/architecture.md). If that is not the case, we recommend reading that first. If you
+are brand new to the project, we recommend starting with our [Getting Started Guide](./getting-started.md).
 
 ## How to build a component
 
-This section outlines the thought process behind authoring new components for MDC-Web. It is
+This section outlines the thought process behind authoring new components for MDC Web. It is
 inspired by React's [Thinking in React](https://facebook.github.io/react/docs/thinking-in-react.html) article.
 
 Starting out from nothing and going straight to a component/adapter/foundation implementation can be
@@ -79,7 +79,7 @@ following steps.
 
 To demonstrate this approach, we will build a **red-blue toggle**, very simple toggle button that
 toggles between a red background with blue text, and vice versa. While not a Material Design
-component, it demonstrates the concepts of how to think about building for MDC-Web.
+component, it demonstrates the concepts of how to think about building for MDC Web.
 
 ### Start with a simple component prototype
 
@@ -144,10 +144,10 @@ class RedblueTogglePrototype {
 new RedblueTogglePrototype(document.querySelector('.redblue-toggle'));
 ```
 
-Note how the JS Component does not reference MDC-Web in any way, nor does it have any notion
+Note how the JS Component does not reference MDC Web in any way, nor does it have any notion
 of foundations or adapters. By omitting this work, you can rapidly experiment with your component,
 incorporating changes quickly and easily. Nonetheless, the way the component is prototype looks
-quite similar to the way that the MDC-Web component will eventually be built.
+quite similar to the way that the MDC Web component will eventually be built.
 
 ### Identify host environment interactions
 
@@ -319,7 +319,7 @@ adapter is extremely straightforward as we can simply repurpose the methods we s
 ```js
 class RedblueToggle extends MDCComponent {
   get toggled() {
-    return this.foundations_.isToggled();
+    return this.foundation_.isToggled();
   }
 
   set toggled(toggled) {
@@ -386,7 +386,7 @@ our [@material/rtl](../packages/mdc-rtl) library to assist us with this.
 ### Support for theming
 
 A component should be able to be altered according to a **theme**. A theme can be defined any way
-you wish. It may be by using _primary_ and _accent_ colors, or you may choose to expose scss
+you wish. It may be by using _primary_ and _secondary_ colors, or you may choose to expose scss
 variables or CSS Custom properties specific to your component. Whichever way you choose, ensure that
 _clients can easily alter common aesthetic elements of your component to make it fit with their
 overall design_. We use [@material/theme](../packages/mdc-theme) for this purpose.
@@ -442,8 +442,9 @@ _Only reference global objects defined within the ECMAScript specification withi
 We make an exception for this rule for `requestAnimationFrame`, but in the future we may refactor
 that out as well. In addition, a workaround to working with host objects in a foundation is to ask
 for them via the adapter. However, you should design your adapter APIs such that they return a
-[structural type]() representing your host object, rather than a [nominal type]() of the host object
-itself. For example, instead of asking for an `HTMLInputElement` of type `"checkbox"`, ask for an
+[structural type](https://github.com/google/closure-compiler/wiki/Structural-Interfaces-in-Closure-Compiler)
+representing your host object, rather than a nominal type of the host object itself. For example,
+instead of asking for an `HTMLInputElement` of type `"checkbox"`, ask for an
 object that has `checked`, `indeterminate`, and `disabled` boolean properties.
 
 ### Clean up all references on destruction
@@ -457,9 +458,9 @@ may be retained. There are two accurate litmus tests to ensure this is being don
    is kept track of, and cleaned up within destroy. For example, every `setTimeout()` call should have its ID retained by the foundation/component, and have `clearTimeout()` called on it within
    destroy.
 
-## Authoring components for MDC-Web
+## Authoring components for MDC Web
 
-The following guidelines are for those who wish to contribute directly to MDC-web. In addition to
+The following guidelines are for those who wish to contribute directly to MDC Web. In addition to
 adhering to all of the practices above, we have additional conventions we expect contributors to
 adhere to. It's worth noting that most of these conventions - including our coding style, commit
 message format, and test coverage - are _automatically enforced via linters_, both so that
@@ -524,7 +525,7 @@ For example, if you are building a checkbox component, `keywords` would include 
   "name": "@material/example",
   "version": "0.0.0",
   "description": "The Material Components for the web example component",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/material-components/material-components-web.git"
@@ -546,22 +547,28 @@ We are required to put the following at the _top_ of _every source code file_, i
 demos, and demo html. The stanza is as follows:
 
 ```
-Copyright 2016 Google Inc. All Rights Reserved.
+Copyright <YEAR> Google Inc.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-    http://www.apache.org/licenses/LICENSE-2.0
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 ```
 
-Please put this in a comment at the top of every source file.
+Please put this in a comment at the top of every source file, replacing <YEAR> with the year the file was created.
 
 ### Scss
 
@@ -569,7 +576,7 @@ Please put this in a comment at the top of every source file.
 
 If variables and mixins are intended to be used outside of a single stylesheet, refactor them out
 into [sass partials](http://sass-lang.com/guide#topic-4). These files can then be included in other
-stylesheets without having extra CSS omitted both times. As a rule of thumb, _never `@import` sass
+stylesheets without having extra CSS omitted both times. As a rule of thumb, _never_ `@import` sass
 files which output CSS`, as it will most likely be duplicate output.
 
 #### Follow the BEM Pattern
@@ -752,22 +759,21 @@ Concretely:
 - Ensure that the correct **commit subject** for the package is added to the
   `config.validate-commit-msg.scope.allowed` array within the top-level `package.json` at the root
   of the repo. The commit subject is the _name the component, without the `mdc-`/`@material/`_.
-  E.g., for `mdc-icon-toggle`, the correct subject is `icon-toggle`.
+  E.g., for `mdc-icon-button`, the correct subject is `icon-button`.
 - Ensure that the package name is added to the `closureWhitelist` array within the top-level
   `package.json`.
 
 #### Closure Compatibility
 
-> NOTE: This section was introduced as part of our [closure compatibility milestone](https://github.com/material-components/material-components-web/milestone/4). Our
-currently existing components are in the process of being made compatible with closure.
+> NOTE: Our currently existing components are in the process of being made compatible with closure.
 
-All core MDC-Web components must be fully compatible with the Google Closure Compiler using its
+All core MDC Web components must be fully compatible with the Google Closure Compiler using its
 advanced compilation mechanisms. We've provided a thorough explanation of this, as well as
 conventions, examples, and common closure patterns you may not be used to, in our [closure compiler documentation](./closure-compiler.md).
 
 ### Testing
 
-The following guidelines should be used to help write tests for MDC-Web code. Our tests are written
+The following guidelines should be used to help write tests for MDC Web code. Our tests are written
 using [mocha](https://mochajs.org/) with the [qunit UI](https://mochajs.org/#qunit), and are driven by [karma](https://karma-runner.github.io/1.0/index.html). We use the [chai assert API](http://chaijs.com/api/assert/)
 for assertions, and [testdouble](https://github.com/testdouble/testdouble.js/) for mocking and stubbing.
 

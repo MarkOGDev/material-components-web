@@ -1,106 +1,158 @@
 //
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google Inc.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 //
 
 @import "@material/elevation/mixins";
+@import "@material/ripple/mixins";
 @import "@material/rtl/mixins";
 @import "@material/theme/mixins";
 @import "@material/typography/mixins";
-
-$mdc-toolbar-row-height: 64px;
-$mdc-toolbar-mobile-row-height: 56px;
-$mdc-toolbar-padding: 20px 28px;
-$mdc-toolbar-mobile-padding: 16px;
-
-$mdc-toolbar-ratio-to-extend-flexible: 4 !default;
-
-$mdc-toolbar-mobile-breakpoint: 599px;
+@import "./mixins";
+@import "./variables";
 
 // postcss-bem-linter: define toolbar
 .mdc-toolbar {
+  @include mdc-toolbar-fill-color-accessible(primary);
+
   display: flex;
   position: relative;
   flex-direction: column;
   justify-content: space-between;
-  width: 100%;
   box-sizing: border-box;
-
-  @include mdc-theme-prop(background-color, primary);
-  @include mdc-theme-prop(color, text-primary-on-primary);
+  width: 100%;
 
   &__row {
     display: flex;
     position: relative;
+    align-items: center;
+    box-sizing: border-box;
     width: 100%;
     height: auto;
     min-height: $mdc-toolbar-row-height;
-    padding: $mdc-toolbar-padding;
-    box-sizing: border-box;
+
+    // TODO: refactor this out when #23 is implemented
+    @media (max-width: $mdc-toolbar-mobile-landscape-width-breakpoint)
+      and (orientation: landscape) {
+      min-height: $mdc-toolbar-mobile-landscape-row-height;
+    }
 
     // TODO: refactor this out when #23 is implemented
     @media (max-width: $mdc-toolbar-mobile-breakpoint) {
       min-height: $mdc-toolbar-mobile-row-height;
-      padding: $mdc-toolbar-mobile-padding;
     }
   }
 
   &__section {
     display: inline-flex;
     flex: 1;
-    align-items: flex-start;
+    align-items: start;
     justify-content: center;
+    box-sizing: border-box;
     min-width: 0;
+    height: 100%;
+    padding: $mdc-toolbar-element-section-padding;
     z-index: 1;
 
+    @media (max-width: $mdc-toolbar-mobile-landscape-width-breakpoint)
+      and (orientation: landscape) {
+      padding: 0;
+    }
+
+    @media (max-width: $mdc-toolbar-mobile-breakpoint) {
+      padding: $mdc-toolbar-element-mobile-section-padding 0;
+    }
+
     &--align-start {
+      @include mdc-rtl-reflexive-box(padding, "left", $mdc-toolbar-section-horizontal-padding);
+
       justify-content: flex-start;
       order: -1;
+
+      @media (max-width: $mdc-toolbar-mobile-landscape-width-breakpoint)
+        and (orientation: landscape) {
+        @include mdc-rtl-reflexive-box(padding, "left", $mdc-toolbar-mobile-section-horizontal-padding);
+      }
+
+      @media (max-width: $mdc-toolbar-mobile-breakpoint) {
+        @include mdc-rtl-reflexive-box(padding, "left", $mdc-toolbar-mobile-section-horizontal-padding);
+      }
     }
 
     &--align-end {
+      @include mdc-rtl-reflexive-box(padding, "right", $mdc-toolbar-section-horizontal-padding);
+
       justify-content: flex-end;
       order: 1;
+
+      @media (max-width: $mdc-toolbar-mobile-landscape-width-breakpoint)
+        and (orientation: landscape) {
+        @include mdc-rtl-reflexive-box(padding, "right", $mdc-toolbar-mobile-section-horizontal-padding);
+      }
+
+      @media (max-width: $mdc-toolbar-mobile-breakpoint) {
+        @include mdc-rtl-reflexive-box(padding, "right", $mdc-toolbar-mobile-section-horizontal-padding);
+      }
     }
   }
 
   &__title {
-    @include mdc-typography(title);
+    @include mdc-typography(headline6);
+    @include mdc-typography-overflow-ellipsis;
+    @include mdc-rtl-reflexive-box(margin, left, $mdc-toolbar-element-horizontal-padding-desktop);
 
-    margin: 0;
+    align-self: center;
+    padding: 12px 0;
     line-height: 1.5rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
     z-index: 1;
+  }
+
+  &__icon,
+  &__menu-icon {
+    @include mdc-toolbar-icon_;
+  }
+}
+
+.mdc-toolbar__menu-icon + .mdc-toolbar__title {
+  @include mdc-rtl-reflexive-box(margin, left, $mdc-toolbar-title-margin-to-menu-icon-desktop);
+}
+
+@media (max-width: $mdc-toolbar-mobile-breakpoint) {
+  .mdc-toolbar__title {
+    @include mdc-rtl-reflexive-box(margin, left, $mdc-toolbar-element-horizontal-padding-mobile);
   }
 }
 
 .mdc-toolbar--fixed {
+  @include mdc-elevation(4);
+
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1;
-
-  @include mdc-elevation(4);
+  z-index: 4;
 }
 
 .mdc-toolbar--flexible {
-  // stylelint-disable plugin/selector-bem-pattern
   // bem linter is disabled because it cannot correctly reconcile mdc prefix for css variables.
-  --mdc-toolbar-ratio-to-extend-flexible: $mdc-toolbar-ratio-to-extend-flexible;
-  // stylelint-enable plugin/selector-bem-pattern
+  // stylelint-disable-next-line plugin/selector-bem-pattern
+  --mdc-toolbar-ratio-to-extend-flexible: #{$mdc-toolbar-ratio-to-extend-flexible};
 
   .mdc-toolbar__row:first-child {
     height: $mdc-toolbar-row-height * $mdc-toolbar-ratio-to-extend-flexible;
@@ -122,17 +174,10 @@ $mdc-toolbar-mobile-breakpoint: 599px;
   // bem linter is disabled because it cannot handle multiple top level selector
   &-default-behavior {
     .mdc-toolbar__title {
-      @include mdc-typography(display1);
+      @include mdc-typography(headline6);
 
-      transform: translateY($mdc-toolbar-row-height * ($mdc-toolbar-ratio-to-extend-flexible - 1));
-      transform: translateY(calc(#{$mdc-toolbar-row-height} * (var(--mdc-toolbar-ratio-to-extend-flexible, #{$mdc-toolbar-ratio-to-extend-flexible}) - 1)));
-      font-weight: #{map-get($mdc-typography-font-weight-values, normal)};
+      align-self: flex-end;
       line-height: 1.5rem;
-
-      @media (max-width: $mdc-toolbar-mobile-breakpoint) {
-        transform: translateY($mdc-toolbar-mobile-row-height * ($mdc-toolbar-ratio-to-extend-flexible - 1));
-        transform: translateY(calc(#{$mdc-toolbar-mobile-row-height} * (var(--mdc-toolbar-ratio-to-extend-flexible, #{$mdc-toolbar-ratio-to-extend-flexible}) - 1)));
-      }
     }
 
     .mdc-toolbar__row:first-child::after {
@@ -154,13 +199,14 @@ $mdc-toolbar-mobile-breakpoint: 599px;
       }
     }
   }
-  // stylelint-enable plugin/selector-bem-pattern
 }
 
 .mdc-toolbar--waterfall {
   &.mdc-toolbar--fixed {
     @include mdc-elevation(0);
-    @include mdc-elevation-transition;
+
+    transition: mdc-elevation-transition-value();
+    will-change: $mdc-elevation-property;
 
     &.mdc-toolbar--flexible-space-minimized {
       @include mdc-elevation(4);
@@ -178,12 +224,18 @@ $mdc-toolbar-mobile-breakpoint: 599px;
   }
 }
 // postcss-bem-linter: end
+// stylelint-enable plugin/selector-bem-pattern
 
 .mdc-toolbar-fixed-adjust {
-  margin-top: $mdc-toolbar-row-height;
+  padding-top: $mdc-toolbar-row-height;
 
-  @media (max-width: 599px) {
-    margin-top: $mdc-toolbar-mobile-row-height;
+  @media (max-width: $mdc-toolbar-mobile-landscape-width-breakpoint)
+    and (max-height: $mdc-toolbar-mobile-breakpoint) {
+    padding-top: $mdc-toolbar-mobile-landscape-row-height;
+  }
+
+  @media (max-width: $mdc-toolbar-mobile-breakpoint) {
+    padding-top: $mdc-toolbar-mobile-row-height;
   }
 }
 

@@ -1,17 +1,24 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 import {assert} from 'chai';
@@ -43,7 +50,7 @@ test('defaultAdapter returns a complete adapter implementation', () => {
     'hasClass', 'addClass', 'removeClass', 'registerScrollHandler',
     'deregisterScrollHandler', 'registerResizeHandler', 'deregisterResizeHandler',
     'getViewportWidth', 'getViewportScrollY', 'getOffsetHeight',
-    'getFlexibleRowElementOffsetHeight', 'notifyChange', 'setStyle',
+    'getFirstRowElementOffsetHeight', 'notifyChange', 'setStyle',
     'setStyleForTitleElement', 'setStyleForFlexibleRowElement',
     'setStyleForFixedAdjustElement',
   ]);
@@ -147,7 +154,7 @@ test('on scroll handles no flexible height case', () => {
   const mockRaf = createMockRaf();
 
   setDeviceDesktop(mockAdapter);
-  td.when(mockAdapter.getFlexibleRowElementOffsetHeight()).thenReturn(numbers.TOOLBAR_ROW_HEIGHT);
+  td.when(mockAdapter.getFirstRowElementOffsetHeight()).thenReturn(numbers.TOOLBAR_ROW_HEIGHT);
   td.when(mockAdapter.getOffsetHeight()).thenReturn(numbers.TOOLBAR_ROW_HEIGHT);
   const {scrollHandler} = createMockHandlers(foundation, mockAdapter, mockRaf);
 
@@ -161,23 +168,23 @@ test('on scroll handles no flexible height case', () => {
 });
 
 const scrollEventMock =
-  (foundation, mockAdapter, mockRaf, {isOutOfTheshold=false, flexExpansionRatio=0} = {}) => {
+  (foundation, mockAdapter, mockRaf, {isOutOfThreshold=false, flexExpansionRatio=0} = {}) => {
     setDeviceDesktop(mockAdapter);
-    td.when(mockAdapter.getFlexibleRowElementOffsetHeight()).thenReturn(numbers.TOOLBAR_ROW_HEIGHT * 3);
+    td.when(mockAdapter.getFirstRowElementOffsetHeight()).thenReturn(numbers.TOOLBAR_ROW_HEIGHT * 3);
     td.when(mockAdapter.getOffsetHeight()).thenReturn(numbers.TOOLBAR_ROW_HEIGHT * 4);
     const {scrollHandler} = createMockHandlers(foundation, mockAdapter, mockRaf);
 
     const flexibleExpansionHeight = numbers.TOOLBAR_ROW_HEIGHT * 2;
     const maxTranslateYDistance = numbers.TOOLBAR_ROW_HEIGHT;
-    const scrollTheshold = flexibleExpansionHeight + maxTranslateYDistance;
+    const scrollThreshold = flexibleExpansionHeight + maxTranslateYDistance;
 
     if (flexExpansionRatio > 0) {
       td.when(mockAdapter.getViewportScrollY()).thenReturn((1 - flexExpansionRatio) * flexibleExpansionHeight);
     } else {
-      if (isOutOfTheshold) {
-        td.when(mockAdapter.getViewportScrollY()).thenReturn(scrollTheshold + 1);
+      if (isOutOfThreshold) {
+        td.when(mockAdapter.getViewportScrollY()).thenReturn(scrollThreshold + 1);
       } else {
-        td.when(mockAdapter.getViewportScrollY()).thenReturn(scrollTheshold - 1);
+        td.when(mockAdapter.getViewportScrollY()).thenReturn(scrollThreshold - 1);
       }
     }
 
@@ -185,29 +192,29 @@ const scrollEventMock =
     mockRaf.flush();
   };
 
-test('on scroll will not execute if we scrolled out of theshold the first time', () => {
+test('on scroll will not execute if we scrolled out of Threshold the first time', () => {
   const {foundation, mockAdapter} = setupTest();
   const mockRaf = createMockRaf();
 
-  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfTheshold: true});
+  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfThreshold: true});
 
   td.verify(mockAdapter.notifyChange({flexibleExpansionRatio: td.matchers.isA(Number)}));
   mockRaf.restore();
 });
 
-test('on scroll will not execute if we scrolled out of theshold the second time', () => {
+test('on scroll will not execute if we scrolled out of Threshold the second time', () => {
   const {foundation, mockAdapter} = setupTest();
   const mockRaf = createMockRaf();
 
-  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfTheshold: true});
+  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfThreshold: true});
   td.reset();
-  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfTheshold: true});
+  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfThreshold: true});
 
   td.verify(mockAdapter.notifyChange({flexibleExpansionRatio: td.matchers.isA(Number)}), {times: 0});
   mockRaf.restore();
 });
 
-test('on scroll will execute if we have not scrolled out of theshold', () => {
+test('on scroll will execute if we have not scrolled out of Threshold', () => {
   const {foundation, mockAdapter} = setupTest();
   const mockRaf = createMockRaf();
 
@@ -392,7 +399,7 @@ test('on scroll take correct action for fixed last row flexible header when othe
   td.when(mockAdapter.hasClass(cssClasses.TOOLBAR_ROW_FLEXIBLE)).thenReturn(true);
   td.when(mockAdapter.hasClass(cssClasses.FIXED)).thenReturn(true);
   td.when(mockAdapter.hasClass(cssClasses.FIXED_LASTROW)).thenReturn(true);
-  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfTheshold: true});
+  scrollEventMock(foundation, mockAdapter, mockRaf, {isOutOfThreshold: true});
 
   td.verify(mockAdapter.notifyChange({
     flexibleExpansionRatio: td.matchers.argThat((flexExpansionRatio) => approximate(flexExpansionRatio, 0, 0.001))}));
@@ -513,7 +520,6 @@ test('on scroll take correct action for flexible fixed last row only header with
   td.when(mockAdapter.hasClass(cssClasses.FLEXIBLE_DEFAULT_BEHAVIOR)).thenReturn(true);
   scrollEventMock(foundation, mockAdapter, mockRaf, {flexExpansionRatio: 0});
 
-  td.verify(mockAdapter.setStyleForTitleElement('transform', td.matchers.anything()));
   td.verify(mockAdapter.setStyleForTitleElement('font-size', td.matchers.anything()));
   mockRaf.restore();
 });
@@ -527,7 +533,6 @@ test('on scroll take correct action for flexible fixed header with default behav
   td.when(mockAdapter.hasClass(cssClasses.FLEXIBLE_DEFAULT_BEHAVIOR)).thenReturn(true);
   scrollEventMock(foundation, mockAdapter, mockRaf, {flexExpansionRatio: 0});
 
-  td.verify(mockAdapter.setStyleForTitleElement('transform', td.matchers.anything()));
   td.verify(mockAdapter.setStyleForTitleElement('font-size', td.matchers.anything()));
   mockRaf.restore();
 });

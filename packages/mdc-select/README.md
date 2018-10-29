@@ -10,432 +10,466 @@ path: /catalog/input-controls/select-menus/
 
 <!--<div class="article__asset">
   <a class="article__asset-link"
-     href="https://material-components-web.appspot.com/select.html">
+     href="https://material-components.github.io/material-components-web-catalog/#/component/select">
     <img src="{{ site.rootpath }}/images/mdc_web_screenshots/selects.png" width="376" alt="Select screenshot">
   </a>
 </div>-->
 
-MDC Select provides Material Design single-option and multi-option select menus. It functions analogously to the
-browser's native `<select>` element, and includes a gracefully degraded version that can be used
-in conjunction with the browser's native element. Both are fully accessible, and fully RTL-aware.
+MDC Select provides Material Design single-option select menus. It supports using the browser's native `<select>`
+element, or a MDC Menu. It is fully accessible, and fully RTL-aware.
 
 ## Design & API Documentation
 
 <ul class="icon-list">
   <li class="icon-list-item icon-list-item--spec">
-    <a href="https://material.io/guidelines/components/text-fields.html">Material Design guidelines: Text Fields</a>
-  </li>
-  <li class="icon-list-item icon-list-item--spec">
-    <a href="https://material.io/guidelines/components/menus.html">Material Design guidelines: Menus</a>
+    <a href="https://material.io/go/design-text-fields">Material Design guidelines: Text Fields</a>
   </li>
   <li class="icon-list-item icon-list-item--link">
-    <a href="https://material-components-web.appspot.com/select.html">Demo</a>
+    <a href="https://material-components.github.io/material-components-web-catalog/#/component/select">Demo</a>
   </li>
 </ul>
 
 ## Installation
 
 ```
-npm install --save @material/select
+npm install @material/select
 ```
 
-## Usage
+## Basic Usage
 
-### Using the full-fidelity JS component
+This section documents how to use a MDC Select with a native `<select>` element. For information on using
+MDC Select with a MDC Menu, see the [Variants](#variants) section below.
+
+### HTML Structure
 
 ```html
-<div class="mdc-select" role="listbox" tabindex="0">
-  <span class="mdc-select__selected-text">Pick a food group</span>
-  <div class="mdc-simple-menu mdc-select__menu">
-    <ul class="mdc-list mdc-simple-menu__items">
-      <li class="mdc-list-item" role="option" id="grains" aria-disabled="true">
-        Pick a food group
-      </li>
-      <li class="mdc-list-item" role="option" id="grains" tabindex="0">
-        Bread, Cereal, Rice, and Pasta
-      </li>
-      <li class="mdc-list-item" role="option" id="vegetables" tabindex="0">
-        Vegetables
-      </li>
-      <li class="mdc-list-item" role="option" id="fruit" tabindex="0">
-        Fruit
-      </li>
-      <li class="mdc-list-item" role="option" id="dairy" tabindex="0">
-        Milk, Yogurt, and Cheese
-      </li>
-      <li class="mdc-list-item" role="option" id="meat" tabindex="0">
-        Meat, Poultry, Fish, Dry Beans, Eggs, and Nuts
-      </li>
-      <li class="mdc-list-item" role="option" id="fats" tabindex="0">
-        Fats, Oils, and Sweets
-      </li>
-    </ul>
-  </div>
+<div class="mdc-select">
+  <i class="mdc-select__dropdown-icon"></i>
+  <select class="mdc-select__native-control">
+    <option value="" disabled selected></option>
+    <option value="grains">
+      Bread, Cereal, Rice, and Pasta
+    </option>
+    <option value="vegetables">
+      Vegetables
+    </option>
+    <option value="fruit">
+      Fruit
+    </option>
+  </select>
+  <label class="mdc-floating-label">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
 </div>
 ```
 
-Then with JS
+### Styles
+
+For the native select, you can simply include the `mdc-select` Sass file.
+
+```scss
+@import "@material/select/mdc-select";
+```
+
+### JavaScript Instantiation
 
 ```js
-import {MDCSelect} from 'mdc-select';
+const select = new mdc.select.MDCSelect(document.querySelector('.mdc-select'));
 
-const select = new MDCSelect(document.querySelector('.mdc-select'));
 select.listen('MDCSelect:change', () => {
-  alert(`Selected "${select.selectedOptions[0].textContent}" at index ${select.selectedIndex} ` +
-        `with value "${select.value}"`);
+  alert(`Selected option at index ${select.selectedIndex} with value "${select.value}"`);
 });
 ```
 
-Note that you can include mdc-select via a UMD bundle, which will be available post-alpha.
+See [Importing the JS component](../../docs/importing-js.md) for more information on how to import JavaScript.
 
-> Note that the full-fidelity version of MDC Select requires you to manually include the styles for
-[mdc-menu](../mdc-menu) and [mdc-list](../mdc-list). If you are using the
-[material-components-web](../material-components-web) package, this is taken care of for you and you
-simply need to import the main stylesheet. Otherwise, _you must ensure that you manually include the
-style dependencies for both the mdc-list and mdc-menu for this component to function properly._
+## Variants
 
-#### Select with pre-selected option
+### Enhanced Select
+
+The enhanced select uses an [`MDCMenu`](../mdc-menu) component instance to contain the list of options, but uses the
+`data-value` attribute instead of `value` to represent the options' values.
+
+> Note: The `data-value` attribute _must_ be present on each option.
+
+The enhanced select requires that you set the `width` of the root element (containing the
+`mdc-select` class) as well as setting the width of the `mdc-select__menu` element to match. This is best done
+through the use of another class (e.g. `demo-width-class` in the example HTML and CSS below).
+
+If you are using the enhanced select within an HTML form, you can include a hidden `<input>` element under the root
+`mdc-select` element, and it will be synchronized when the value is updated via user interaction or programmatically.
 
 ```html
-<div class="mdc-select" role="listbox" tabindex="0">
-  <span class="mdc-select__selected-text">Vegetables</span>
-  <div class="mdc-simple-menu mdc-select__menu">
-    <ul class="mdc-list mdc-simple-menu__items">
-      <li class="mdc-list-item" role="option" id="grains" tabindex="0">
+<div class="mdc-select demo-width-class">
+  <input type="hidden" name="enhanced-select">
+  <i class="mdc-select__dropdown-icon"></i>
+  <div class="mdc-select__selected-text"></div>
+  <div class="mdc-select__menu mdc-menu mdc-menu-surface demo-width-class">
+    <ul class="mdc-list">
+      <li class="mdc-list-item mdc-list-item--selected" data-value="" aria-selected="true"></option>
+      <li class="mdc-list-item" data-value="grains">
         Bread, Cereal, Rice, and Pasta
       </li>
-      <li class="mdc-list-item" role="option" aria-selected id="vegetables" tabindex="0">
+      <li class="mdc-list-item" data-value="vegetables">
         Vegetables
       </li>
-      <li class="mdc-list-item" role="option" id="fruit" tabindex="0">
+      <li class="mdc-list-item" data-value="fruit">
         Fruit
-      </li>
-      <li class="mdc-list-item" role="option" id="dairy" tabindex="0">
-        Milk, Yogurt, and Cheese
-      </li>
-      <li class="mdc-list-item" role="option" id="meat" tabindex="0">
-        Meat, Poultry, Fish, Dry Beans, Eggs, and Nuts
-      </li>
-      <li class="mdc-list-item" role="option" id="fats" tabindex="0">
-        Fats, Oils, and Sweets
       </li>
     </ul>
   </div>
+  <span class="mdc-floating-label">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
 </div>
+```
+
+When using the enhanced select, you will also need to load the Menu and List components' styles.
+
+```scss
+@import "@material/list/mdc-list";
+@import "@material/menu-surface/mdc-menu-surface";
+@import "@material/menu/mdc-menu";
+@import "@material/select/mdc-select";
+
+.demo-width-class {
+  width: 400px;
+}
+```
+
+#### Usability Notes
+
+The enhanced select provides a look and feel more consistent with the rest of Material Design, but there are some
+trade-offs to consider when choosing it over the native `<select>` element.
+
+* **Keyboard type-ahead:** Native selects typically benefit from OS-implemented keyboard type-ahead support
+  (i.e. they will automatically select an item starting with the letters typed). This is not present in the enhanced select.
+* **Mobile UI:** Mobile OSes implement native selects as a modal dialog or bottom sheet. The enhanced select always uses
+  an MDC Menu, which may not provide an optimal experience for small screens.
+
+#### Accessibility (a11y)
+
+In order to have an accessible component for users, it's recommended that you follow the WAI-ARIA example for
+[Collapsible Dropdown Listbox](https://www.w3.org/TR/wai-aria-practices/examples/listbox/listbox-collapsible.html).
+The following is an example of the enhanced select component with all of the necessary aria attributes.
+
+```html
+<div class="mdc-select">
+  <input type="hidden" name="enhanced-select">
+  <i class="mdc-select__dropdown-icon"></i>
+  <div id="demo-selected-text" class="mdc-select__selected-text" role="button" aria-haspopup="listbox" aria-labelledby="demo-label demo-selected-text">Vegetables</div>
+  <div class="mdc-select__menu mdc-menu mdc-menu-surface" role="listbox">
+    <ul class="mdc-list">
+      <li class="mdc-list-item mdc-list-item--selected" data-value="" role="option"></li>
+      <li class="mdc-list-item" data-value="grains" role="option">
+        Bread, Cereal, Rice, and Pasta
+      </li>
+      <li class="mdc-list-item mdc-list-item--disabled" data-value="vegetables" aria-selected="true" aria-disabled="true" role="option">
+        Vegetables
+      </li>
+      <li class="mdc-list-item" data-value="fruit" role="option">
+        Fruit
+      </li>
+    </ul>
+  </div>
+  <span id="demo-label" class="mdc-floating-label mdc-floating-label--float-above">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
+</div>
+```
+
+### Outlined Select
+
+The Select Outlined variant uses the `mdc-notched-outline` in place of the `mdc-line-ripple` element and adds the
+`mdc-select--outlined` modifier class on the root element. All other elements for each type of select remain the
+same.
+
+```html
+<div class="mdc-select mdc-select--outlined">
+  <!-- Other elements from the native or enhanced select remain. -->
+  <label class="mdc-floating-label">Pick a Food Group</label>
+   <div class="mdc-notched-outline">
+     <svg>
+       <path class="mdc-notched-outline__path"></path>
+     </svg>
+   </div>
+   <div class="mdc-notched-outline__idle"></div>
+</div>
+```
+
+### Additional Information
+
+#### Select with pre-selected option
+
+When dealing with a select component that has a pre-selected value, include the `mdc-floating-label--float-above`
+modifier class on the `mdc-floating-label` element, and add the `selected` attribute to the selected option.
+This will ensure that the label moves out of the way of the select's value and prevents a Flash Of Unstyled Content
+(**FOUC**).
+
+```html
+<div class="mdc-select">
+  <i class="mdc-select__dropdown-icon"></i>
+  <select class="mdc-select__native-control">
+    <option value="vegetables">
+      Vegetables
+    </option>
+    <option value="fruit">
+      Fruit
+    </option>
+    <option value="dairy" selected>
+      Milk, Yogurt, and Cheese
+    </option>
+  </select>
+  <label class="mdc-floating-label mdc-floating-label--float-above">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
+</div>
+```
+
+The enhanced select works in a similar way, but uses the `mdc-list-item--selected` class to set the selected item. The
+enhanced select also needs the text from the selected element copied to the `mdc-select__selected-text` element.
+
+```html
+<div class="mdc-select demo-width-class">
+  <input type="hidden" name="enhanced-select">
+  <i class="mdc-select__dropdown-icon"></i>
+  <div class="mdc-select__selected-text">Vegetables</div>
+  <div class="mdc-select__menu demo-width-class mdc-menu mdc-menu-surface">
+    <ul class="mdc-list">
+      <li class="mdc-list-item" data-value=""></li>
+      <li class="mdc-list-item" data-value="grains">
+        Bread, Cereal, Rice, and Pasta
+      </li>
+      <li class="mdc-list-item mdc-list-item--selected" data-value="vegetables" aria-selected="true">
+        Vegetables
+      </li>
+      <li class="mdc-list-item" data-value="fruit">
+        Fruit
+      </li>
+    </ul>
+  </div>
+  <span class="mdc-floating-label mdc-floating-label--float-above">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
+</div>
+```
+
+#### Using the floating label as the placeholder
+
+By default, `<select>` elements will select their first enabled option. In order to initially display a placeholder
+instead, add an initial `<option>` element with the `selected` attribute set (and optionally `disabled`, if the field is
+required), and with `value` set to `""`.
+
+```html
+<option value="" disabled selected></option>
+```
+
+For the enhanced select, simply leave the `mdc-select__selected-text` element empty and don't specify an element as
+selected. If leaving the field empty should be a valid option, include an `mdc-list-item` element at the beginning of
+the list with an empty `data-value` attribute.
+
+```html
+<li class="mdc-list-item mdc-list-item--selected" aria-selected="true" role="option" data-value=""></li>
 ```
 
 #### Disabled select
 
+To initially render a MDC Select in a disabled state, add the `mdc-select--disabled` class to the `mdc-select` element,
+and add the `disabled` attribute to the `<select>` element.
+
 ```html
-<div class="mdc-select mdc-select--disabled" role="listbox" aria-disabled="true" tabindex="-1">
-  <span class="mdc-select__selected-text">Pick a food group</span>
-  <div class="mdc-simple-menu mdc-select__menu">
-    <ul class="mdc-list mdc-simple-menu__items">
-      <li class="mdc-list-item" role="option" id="grains" tabindex="0">
-        Bread, Cereal, Rice, and Pasta
-      </li>
-      <li class="mdc-list-item" role="option" id="vegetables" tabindex="0">
-        Vegetables
-      </li>
-      <li class="mdc-list-item" role="option" id="fruit" tabindex="0">
-        Fruit
-      </li>
-      <li class="mdc-list-item" role="option" id="dairy" tabindex="0">
-        Milk, Yogurt, and Cheese
-      </li>
-      <li class="mdc-list-item" role="option" id="meat" tabindex="0">
-        Meat, Poultry, Fish, Dry Beans, Eggs, and Nuts
-      </li>
-      <li class="mdc-list-item" role="option" id="fats" tabindex="0">
-        Fats, Oils, and Sweets
-      </li>
-    </ul>
-  </div>
+<div class="mdc-select mdc-select--disabled">
+  <i class="mdc-select__dropdown-icon"></i>
+  <select class="mdc-select__native-control" disabled>
+    ...
+  </select>
+  <label class="mdc-floating-label">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
 </div>
 ```
 
-### Using the Pure CSS Select
-
-The `mdc-select` CSS class also works on browser's native `<select>` elements, allowing for a
-seamless, un-invasive experience in browsers where a native select may be more appropriate, such as
-on a mobile device. It does not require any javascript, nor any CSS for `mdc-menu` or `mdc-list`.
+For the enhanced select, add the `mdc-select--disabled` class to the `mdc-select` element, and add the `disabled`
+attribute to the hidden `<input>` element if present.
 
 ```html
-<select class="mdc-select">
-  <option value="" default selected>Pick a food</option>
-  <option value="grains">Bread, Cereal, Rice, and Pasta</option>
-  <option value="vegetables">Vegetables</option>
-  <optgroup label="Fruits">
-    <option value="apple">Apple</option>
-    <option value="oranges">Orange</option>
-    <option value="banana">Banana</option>
-  </optgroup>
-  <option value="dairy">Milk, Yogurt, and Cheese</option>
-  <option value="meat">Meat, Poultry, Fish, Dry Beans, Eggs, and Nuts</option>
-  <option value="fats">Fats, Oils, and Sweets</option>
-</select>
+<div class="mdc-select mdc-select--disabled">
+  <input type="hidden" name="enhanced-select" disabled>
+  <i class="mdc-select__dropdown-icon"></i>
+  <div class="mdc-select__selected-text"></div>
+  <div class="mdc-select__menu mdc-menu mdc-menu-surface">
+    ...
+  </div>
+  <span class="mdc-floating-label">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
+</div>
 ```
 
-### Multi Select
+#### Disabled options
 
-MDC-Web implements multi-select on top of the `<select multiple>` element.
+For the native `select`, simply add the `disabled` attribute to individual options to disable them.
 
 ```html
-<select multiple size="6" class="mdc-multi-select mdl-list" >
-  <optgroup class="mdc-list-group" label="Starches">
-    <option class="mdc-list-item">
-      Potato
+<div class="mdc-select">
+  <select class="mdc-select__native-control">
+    <option value="grains">
+      Bread, Cereal, Rice, and Pasta
     </option>
-    <option class="mdc-list-item">
-      Cereal
+    <option value="vegetables" disabled>
+      Vegetables
     </option>
-  </optgroup>
-  <option class="mdc-list-divider" role="presentation" disabled />
-  <option>
-    misc...
-  </option>
-</select>
+    <option value="fruit">
+      Fruit
+    </option>
+  </select>
+  <label class="mdc-floating-label">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
+</div>
 ```
 
-Select elements take a `size` attribute to determine the height of the select box.
+For the enhanced select, you should add the `mdc-list-item--disabled` class to list items that are disabled. Unlike the
+native select, disabled list items are removed from the list items index, and are ignored entirely. You cannot
+programmatically select a disabled list item in the enhanced select.
 
-If you'd like to maintain the width or height outside of the attribute, you'll need to set it in your styles:
-
-```css
-.my-select-container .mdc-select {
-  width: 300px;
-  height: 550px;
-}
+```html
+<div class="mdc-select">
+  <input type="hidden" name="enhanced-select">
+  <i class="mdc-select__dropdown-icon"></i>
+  <div class="mdc-select__selected-text">Vegetables</div>
+  <div class="mdc-select__menu mdc-menu mdc-menu-surface">
+    <ul class="mdc-list">
+      <li class="mdc-list-item" data-value=""></li>
+      <li class="mdc-list-item" data-value="grains">
+        Bread, Cereal, Rice, and Pasta
+      </li>
+      <li class="mdc-list-item mdc-list-item--selected mdc-list-item--disabled" data-value="vegetables">
+        Vegetables
+      </li>
+      <li class="mdc-list-item" data-value="fruit">
+        Fruit
+      </li>
+    </ul>
+  </div>
+  <span class="mdc-floating-label mdc-floating-label--float-above">Pick a Food Group</label>
+  <div class="mdc-line-ripple"></div>
+</div>
 ```
 
-#### Classes
+### Select with Helper Text
 
-| Class                    | Description                                     |
-| ------------------------ | ----------------------------------------------- |
-| `mdc-select`             | A pure css `select` element                     |
-| `mdc-list-group`         | A group of options.                             |
-| `mdc-list-item`          | A list item.                                    |
-| `mdc-list-divider`       | A divider.                                      |
+The helper text provides supplemental information and/or validation messages to users. It appears when the select
+element is focused and disappears on blur by default, or it can be persistent.
+See [here](helper-text/) for more information on using helper text.
 
-It is advised that dividers also set `role="presentation"` to disable selection and not cloud accessibility.
+### Select with Leading  Icons
 
-### MDC Select Component API
+Leading icons can be added within the default or outlined variant of MDC Select as visual indicators as
+well as interaction targets. See [here](icon/) for more information on using icons.
 
-The MDC Select component API is modeled after a subset of the `HTMLSelectElement` functionality, and
-is outlined below.
+## Style Customization
 
-#### Properties
+#### CSS Classes
 
-| Property Name | Type | Description |
-| --- | --- | --- |
-| `value` | `string` | _(read-only)_ The `id` of the currently selected option. If no `id` is present on the selected option, its `textContent` is used. Returns an empty string when no option is selected. |
-| `options` | `HTMLElement[]` | _(read-only)_ An _array_ of menu items comprising the select's options. |
-| `selectedIndex` | `number` | The index of the currently selected option. Set to -1 if no option is currently selected. Changing this property will update the select element. |
-| `selectedOptions` | `HTMLElement[]` | _(read-only)_ A NodeList of either the currently selected option, or no elements if nothing is selected. |
-| `disabled` | `boolean` | Whether or not the component is disabled. Settings this sets the disabled state on the component. |
-
-#### Methods
-
-| Method Signature | Description |
+| Class | Description |
 | --- | --- |
-| `item(index: number) => HTMLElement?` | Analogous to `HTMLSelectElement.prototype.item`. Returns the option at the specified index, or `null` if the index is out of bounds. }
-| `nameditem(key: string) => HTMLElement?` | Analogous to `HTMLSelectElement.prototype.nameditem`. Returns the options either whose `id` equals the given `key`, or whose `name` attribute equals the given `key`. Returns `null` if no item with an `id` or `name` attribute of the specified key is found. |
+| `mdc-select` | Mandatory. |
+| `mdc-select__menu` | Mandatory when using the enhanced select. This class should be placed on the `mdc-menu` element within the `mdc-select` element. |
+| `mdc-select__dropdown-icon` | Mandatory. Should be placed on an `i` element within the `mdc-select` element. Used for the dropdown arrow svg and animation.
+| `mdc-select__icon` | Optional. Should be placed on an `i` or `svg` element within the `mdc-select` element. Used for the leading icon.
+| `mdc-select--disabled` | Optional. Styles the select as disabled. This class should be applied to the root element when the `disabled` attribute is applied to the `<select>` element. |
+| `mdc-select--outlined` | Optional. Styles the select as outlined select. |
+| `mdc-select__native-control` | Mandatory for the native select. The native `<select>` element. |
+| `mdc-select__selected-text` | Mandatory for the enhanced select. This class should be placed on a `div` within the `mdc-select` element. |
+| `mdc-select--with-leading-icon` | Styles the select as a select with a leading icon. |
 
-#### Events
+> Note: To further customize the [MDCMenu](./../mdc-menu) or the [MDCList](./../mdc-list) component contained within the select, please refer to their respective documentation.
 
-The MDC Select JS component emits an `MDCSelect:change` event when the selected option changes as
-the result of a user action.
+### Sass Mixins
 
-#### Instantiating using a custom `MDCSimpleMenu` component.
+Mixins should be included in the context of a custom class applied to the component's root element, e.g. `.my-select`.
 
-`MDCSelect` controls an [MDCSimpleMenu](../mdc-menu) instance under the hood in order to display
-its options. If you'd like to instantiate a custom menu instance, you can provide an optional 3rd
-`menuFactory` argument to `MDCSelect`'s constructor.
+Mixin | Description
+--- | ---
+`mdc-select-ink-color($color)` | Customizes the color of the selected item displayed in the select.
+`mdc-select-container-fill-color($color)` | Customizes the background color of the select.
+`mdc-select-label-color($color)` | Customizes the label color of the select in the unfocused state.
+`mdc-select-focused-label-color($color)` | Customizes the label color of the select when focused.
+`mdc-select-bottom-line-color($color)` | Customizes the color of the default bottom line of the select.
+`mdc-select-focused-bottom-line-color($color)` | Customizes the color of the bottom line of the select when focused.
+`mdc-select-shape-radius($radius, $rtl-reflexive)` | Sets rounded shape to boxed select variant with given radius size. Set `$rtl-reflexive` to true to flip radius values in RTL context, defaults to false.
+`mdc-select-hover-bottom-line-color($color)` | Customizes the color of the bottom line when the select is hovered.
+`mdc-select-outline-color($color)` | Customizes the color of the notched outline.
+`mdc-select-outline-shape-radius($radius, $rtl-reflexive)` | Sets the border radius of of the outlined select variant. Set `$rtl-reflexive` to true to flip radius values in RTL context, defaults to false.
+`mdc-select-focused-outline-color($color)` | Customizes the color of the outline of the select when focused.
+`mdc-select-hover-outline-color($color)` | Customizes the color of the outline when the select is hovered.
 
-```js
-const menuFactory = menuEl => {
-  const menu = new MDCSimpleMenu(menuEl);
-  // Do stuff with menu...
-  return menu;
-};
-const selectEl = document.querySelector('.mdc-select');
-const select = new MDCSelect(selectEl, /* foundation */ undefined, menuFactory);
-```
+> NOTE: To further customize the floating label, please see the [floating label documentation](./../mdc-floating-label/README.md).
 
-The `menuFactory` function is passed an `HTMLElement` and is expected to return an `MDCSimpleMenu`
-instance attached to that element. This is mostly used for testing purposes, but it's there if you
-need it nonetheless.
+## `MDCSelect` API
 
-## Using the foundation class
+The `MDCSelect` component API is modeled after a subset of the `HTMLSelectElement` functionality.
 
-MDC Select ships with a foundation class that framework authors can use to integrate MDC Select
-into their custom components. Note that due to the nature of MDC Select, the adapter is quite
-complex. We try to provide as much guidance as possible, but we encourage developers to reach out
-to us via GH Issues if they run into problems.
+| Property | Type | Description |
+| --- | --- | --- |
+| `value` | string | The `value`/`data-value` of the currently selected option. |
+| `selectedIndex` | number | The index of the currently selected option. Set to -1 if no option is currently selected. Changing this property will update the select element. |
+| `disabled` | boolean | Whether or not the component is disabled. Setting this sets the disabled state on the component. |
+| `valid` | boolean | Whether or not the component is in a valid state. Setting this updates styles on the component, but does not affect the native validity state. |
+| `required` | boolean | Whether or not the component is required. Setting this updates the `required` or `aria-required` attribute on the component and enables validation. |
+| `leadingIconAriaLabel` | string (write-only) | Proxies to the foundation's `setLeadingIconAriaLabel` method. |
+| `leadingIconContent` | string (write-only) | Proxies to the foundation's `setLeadingIconContent` method. |
+| `helperTextContent` | string (write-only)| Proxies to the foundation's `setHelperTextContent` method when set. |
 
-### Notes for component implementors
+### Events
 
-The `MDCSelectFoundation` expects that the select component conforms to the following two requirements:
+Event Name | Data | Description
+--- | --- | ---
+`MDCSelect:change` | `{value: string, index: number}` | Used to indicate when an element has been selected. This event also includes the value of the item and the index.
 
-1. The component owns an element that's used as its select menu, e.g. its **menu element**.
+## Usage within Web Frameworks
 
-2. The component controls an instance of `MDCSimpleMenu`, which is attached to its menu element.
+If you are using a JavaScript framework, such as React or Angular, you can create a Select for your framework. Depending on your needs, you can use the _Simple Approach: Wrapping MDC Web Vanilla Components_, or the _Advanced Approach: Using Foundations and Adapters_. Please follow the instructions [here](../../docs/integrating-into-frameworks.md).
 
-We achieve this by accepting a `menuFactory` optional constructor parameter, which is a function
-which is passed our menu element, and is expected to return an `MDCSimpleMenu` component instance.
-If you are attempting to implement mdc-select for your framework, and you find that this approach
-does not work for you, and there is no suitable way to satisfy the above two requirements, please
-[open an issue](https://github.com/material-components/material-components-web/issues/new).
-
-`MDCSelectFoundation` also has the ability to resize itself whenever its options change, via the
-`resize()` method. We recommend calling this method on initialization, or when the menu items are
-modified. For example, if building a react component, it may be appropriate to call `resize()`
-within `componentDidUpdate`.
-
-### Adapter API
+### `MDCSelectAdapter`
 
 | Method Signature | Description |
 | --- | --- |
 | `addClass(className: string) => void` | Adds a class to the root element. |
 | `removeClass(className: string) => void` | Removes a class from the root element. |
-| `setAttr(attr: string, value: string) => void` | Sets attribute `attr` to value `value` on the root element. |
-| `rmAttr(attr: string) => void` | Removes attribute `attr` from the root element. |
-| `computeBoundingRect() => {left: number, top: number}` | Returns an object with a shape similar to a `ClientRect` object, with a `left` and `top` property specifying the element's position on the page relative to the viewport. The easiest way to achieve this is by calling `getBoundingClientRect()` on the root element. |
-| `registerInteractionHandler(type: string, handler: EventListener) => void` | Adds an event listener `handler` for event type `type` on the root element. |
-| `deregisterInteractionHandler(type: string, handler: EventListener) => void` | Removes an event listener `handler` for event type `type` on the root element. |
-| `focus() => void` | Focuses the root element |
-| `makeTabbable() => void` | Allows the root element to be tab-focused via keyboard. We achieve this by setting the root element's `tabIndex` property to `0`. |
-| `makeUntabbable() => void` | Disallows the root element to be tab-focused via keyboard. We achieve this by setting the root element's `tabIndex` property to `-1`. |
-| `getComputedStyleValue(propertyName: string) => string` | Get the root element's computed style value of the given dasherized css property `propertyName`. We achieve this via `getComputedStyle(...).getPropertyValue(propertyName). `|
-| `setStyle(propertyName: string, value: string) => void` | Sets a dasherized css property `propertyName` to the value `value` on the root element. We achieve this via `root.style.setProperty(propertyName, value)`. |
-| `create2dRenderingContext() => {font: string, measureText: (string) => {width: number}}` | Returns an object which has the shape of a CanvasRenderingContext2d instance. Namely, it has a string property `font` which is writable, and a method `measureText` which given a string of text returns an object containing a `width` property specifying how wide that text should be rendered in the `font` specified by the font property. An easy way to achieve this is simply `document.createElement('canvas').getContext('2d');`. |
-| `setMenuElStyle(propertyName: string) => void` | Sets a dasherized css property `propertyName` to the value `value` on the menu element. |
-| `setMenuElAttr(attr: string, value: string) => void` | Sets attribute `attr` to value `value` on the menu element. |
-| `rmMenuElAttr(attr: string) => void` | Removes attribute `attr` from the menu element. |
-| `getMenuElOffsetHeight() => number` | Returns the `offsetHeight` of the menu element. |
-| `openMenu(focusIndex: string) => void` | Opens the select's menu with focus on the option at the given `focusIndex`. The focusIndex is guaranteed to be in bounds. |
-| `isMenuOpen() => boolean` | Returns true if the menu is open, false otherwise. |
-| `setSelectedTextContent(selectedTextContent: string) => void` | Sets the text content of the `.mdc-select__selected-text` element to `selectedTextContent`. |
-| `getNumberOfOptions() => number` | Returns the number of options contained in the select's menu. |
-| `getTextForOptionAtIndex(index: number) => string` | Returns the text content for the option at the specified index within the select's menu. |
-| `getValueForOptionAtIndex(index: number) => string` | Returns the value for the option at the specified index within the select's menu. We adhere to the conventions of `HTMLSelectElement` - as described above - returning the value of the selected option's `id` in place of a `value` attribute and falling back to its `textContent`. Framework implementations may want to customize this method to suit their needs. |
-| `setAttrForOptionAtIndex(index: number, attr: string, value: string) => void` | Sets an attribute `attr` to value `value` for the option at the specified index within the select's menu. |
-| `rmAttrForOptionAtIndex(index: number, attr: string) => void` | Removes an attribute `attr` for the option at the specified index within the select's menu. |
-| `getOffsetTopForOptionAtIndex(index: number) => number` | Returns the `offsetTop` of the option element at the specified index. The index is guaranteed to be in bounds. |
-| `registerMenuInteractionHandler(type: string, handler: EventListener) => void` | Registers an event listener on the menu component's root element. Note that we will always listen for `MDCSimpleMenu:selected` for change events, and `MDCSimpleMenu:cancel` to know that we need to close the menu. If you are using a different events system, you could check the event type for either one of these strings and take the necessary steps to wire it up. |
-| `deregisterMenuInteractionHandler(type: string, handler: EventListener) => void` | Opposite of `registerMenuInteractionHandler`. |
-| `notifyChange() => void` | Broadcast a change event, similar to the `change` event emitted by an `HTMLSelectElement`. While we use custom events in our implementation for this, you can use any mechanism desired for notifications, such as callbacks, reactive streams, etc. Note that you can also pass data within your event if you'd like via `foundation.getValue()` and `foundation.getSelectedIndex()`. |
-| `getWindowInnerHeight() => number` | Returns the `innerHeight` property of the `window` element. |
+| `hasClass(className: string) => boolean` | Returns true if the root element has the className in its classList. |
+| `activateBottomLine() => void` | Activates the bottom line component. |
+| `deactivateBottomLine() => void` | Deactivates the bottom line component. |
+| `getValue() => string` | Returns the value selected `option` on the `select` element and the `data-value` of the selected list item on the enhanced select. |
+| `isRtl() => boolean` | Returns true if a parent of the root element is in RTL. |
+| `floatLabel(value: boolean) => void` | Floats or defloats label. |
+| `getLabelWidth() => number` | Returns the offsetWidth of the label element. |
+| `hasOutline() => boolean` | Returns true if the `select` has the notched outline element. |
+| `notchOutline(labelWidth: number, isRtl, boolean) => void` | Switches the notched outline element to its "notched state." |
+| `closeOutline() => void` | Switches the notched outline element to its closed state. |
+| `openMenu() => void` | Causes the menu element in the enhanced select to open. |
+| `closeMenu() => void` | Causes the menu element in the enhanced select to close. |
+| `setValue(value: string) => void` | Sets the value of the select or text content of the selected-text element. |
+| `isMenuOpen() => boolean` | Returns true if the menu is currently opened in the enhanced select. |
+| `setSelectedIndex(index: number) => void` | Selects the option or list item at the specified index. |
+| `setDisabled(isDisabled: boolean) => void` | Enables or disables the native or enhanced select. |
+| `setRippleCenter(normalizedX: number) => void` | Sets the line ripple center to the provided normalizedX value. |
+| `notifyChange(value: string) => void` | Emits the `MDCSelect:change` event when an element is selected. |
+| `checkValidity() => boolean` | Returns whether the component is currently valid, using the native select's `checkValidity` or equivalent logic for the enhanced select. |
+| `setValid(isValid: boolean) => void` | Adds or removes invalid styles. |
 
-### The full foundation API
+### `MDCSelectFoundation`
 
-#### MDCSelectFoundation.getValue() => string
+| Method Signature | Description |
+| --- | --- |
+| `notchOutline(openNotch: boolean) => void` | Opens/closes the notched outline. |
+| `setDisabled(isDisabled: boolean) => void` | Updates appearance based on disabled state. This must be called whenever the `disabled` state changes. |
+| `handleFocus() => void` | Handles a focus event on the `select` element. |
+| `handleBlur() => void` | Handles a blur event on the `select` element. |
+| `handleClick(normalizedX: number) => void` | Sets the line ripple center to the normalizedX for the line ripple. |
+| `handleChange() => void` | Handles a change to the `select` element's value. This must be called both for `change` events and programmatic changes requested via the component API. |
+| `handleKeydown(event: Event) => void` | Handles opening the menu (enhanced select) when the `mdc-select__selected-text` element is focused and the user presses the `Enter` or `Space` key. |
+| `setSelectedIndex(index: number) => void` | Handles setting the `mdc-select__selected-text` element and closing the menu (enhanced select only). Also causes the label to float and outline to notch if needed. |
+| `setValue(value: string) => void` | Handles setting the value through the adapter and causes the label to float and outline to notch if needed. |
+| `getValue() => string` | Handles getting the value through the adapter. |
+| `setValid(isValid: boolean) => void` | Sets the valid state through the adapter. |
+| `isValid() => boolean` | Gets the valid state through the adapter's `checkValidity` API. |
+| `layout() => void` | Handles determining if the notched outline should be notched. |
+| `setLeadingIconAriaLabel(label: string) => void` | Sets the aria label of the leading icon. |
+| `setLeadingIconContent(content: string) => void` | Sets the text content of the leading icon. |
+| `setHelperTextContent(content: string) => void` | Sets the content of the helper text. |
 
-Returns the value of the currently selected option, or an empty string if no option is selected.
-
-#### MDCSelectFoundation.getSelectedIndex() => number
-
-Returns the index of the currently selected option. Returns -1 if no option is currently selected.
-
-#### MDCSelectFoundation.setSelectedIndex(selectedIndex: number) => void
-
-Sets the selected index of the component.
-
-#### MDCSelectFoundation.isDisabled() => boolean
-
-Returns whether or not the select is disabled.
-
-#### MDCSelectFoundation.setDisabled(disabled: boolean) => void
-
-Enables/disables the select.
-
-## Theming
-
-The select's bottom border is set to the current theme's primary color when focused. The select is
-fully dark theme aware.
-
-## Tips / Tricks
-
-### Switching between selects for better cross-device UX
-
-Selects are a tricky beast on the web. Many times, a custom select component will work well on large
-devices with mouse/keyboard capability, but fail miserably on smaller-scale devices without
-fine-grained pointer capability, such as a phone. Because `mdc-select` works on native selects, you
-can easily switch between a custom select on larger devices and a native element on smaller ones.
-
-First, wrap both a custom select and a native select within a wrapper element, let's call it the
-`select-manager`.
-
-```html
-<div class="select-manager">
-  <!-- Custom MDC Select, shown on desktop -->
-  <div class="mdc-select" role="listbox" tabindex="0">
-    <span class="mdc-select__selected-text">Pick one</span>
-    <div class="mdc-simple-menu mdc-select__menu">
-      <ul class="mdc-list mdc-simple-menu__items">
-        <li class="mdc-list-item" role="option" id="a" tabindex="0">A</li>
-        <li class="mdc-list-item" role="option" id="b" tabindex="0">B</li>
-        <li class="mdc-list-item" role="option" id="c" tabindex="0">C</li>
-      </ul>
-    </div>
-  </div>
-  <!-- Native element, shown on mobile devices -->
-  <select class="mdc-select">
-    <option value="" selected disabled>Pick one</option>
-    <option value="a">A</option>
-    <option value="b">B</option>
-    <option value="c">C</option>
-  </select>
-</div>
-```
-
-Then, write some CSS that implements a media query checking for a small screen as well as
-[course pointer interaction](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/pointer). This
-will ensure that the custom select will still be present on smaller devices that do have
-mouse/keyboard capability, such as a hybrid tablet or a small browser window on a desktop.
-
-```css
-.select-manager > select.mdc-select {
-  display: none;
-}
-
-@media (max-width: 600px) and (pointer: coarse) {
-  .select-manager > .mdc-select[role="listbox"] {
-    display: none;
-  }
-
-  .select-manager > select.mdc-select {
-    display: block;
-  }
-}
-```
-
-Finally, we need to be able to react to events and keep each component in sync. We can do this in
-a few lines of JS, and check where the event came from by looking at its `type`. If it came from the
-custom component, the type will be `MDCSelect:change`, otherwise it will simply be `change`.
-
-```js
-const selectManager = document.querySelector('.select-manager');
-const selects = {
-  custom: MDCSelect.attachTo(selectManager.querySelector('.mdc-select[role="listbox"]')),
-  native: MDCSelect.attachTo(selectManager.querySelector('select.mdc-select'))
-};
-const changeHandler = ({type}) =>  {
-  let changedSelect, selectToUpdate, value;
-  if (type === 'MDCSelect:change') {
-    changedSelect = selects.custom;
-    selectToUpdate = selects.native;
-    value = changedSelect.selectedOptions[0].id;
-  } else {
-    changeSelect = selects.native;
-    selectToUpdate = selects.custom;
-    value = changedSelect.selectedOptions[0].value;
-  }
-  selectToUpdate.selectedIndex = changedSelect.selectedIndex;
-  console.info('Selected value', value);
-};
-selects.custom.listen('MDCSelect:change', changeHandler);
-selects.native.addEventListener('change', changeHandler);
-```
-
-We are looking into building this functionality into `MDCSelect` in the future.
+`MDCSelectFoundation` supports multiple optional sub-elements: helper text and icon. The foundations of these sub-elements must be passed in as constructor arguments to `MDCSelectFoundation`.

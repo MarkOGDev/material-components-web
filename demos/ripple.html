@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <!--
-  Copyright 2016 Google Inc. All rights reserved.
+  Copyright 2016 Google Inc.
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
 
-      https://www.apache.org/licenses/LICENSE-2.0
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
 -->
-<html class="mdc-typography">
+<html>
   <head>
     <meta charset="utf-8">
     <title>Ripple - Material Components Catalog</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="/images/logo_components_color_2x_web_48dp.png" />
-    <script src="assets/material-components-web.css.js" charset="utf-8"></script>
-    <link href="demos.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/images/logo_components_color_2x_web_48dp.png">
+    <link rel="stylesheet" href="/assets/ripple.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
-    <script>
-      if (!window.CSS || !window.CSS.supports ||
-        !window.CSS.supports('--css-vars', 'yes') && !(window.CSS.supports('color', '#00000000'))) {
-        document.documentElement.classList.add('unsupported');
-      }
-    </script>
-    <style type="text/css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <script src="/ready.js"></script>
+    <style>
       .demo-surface {
         display: flex;
         align-items: center;
@@ -44,19 +44,11 @@
         -webkit-user-select: none;
       }
 
-      .mdc-ripple-surface[data-mdc-ripple-is-unbounded] {
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        border-radius: 50%;
-      }
-
-      .mdc-ripple-surface[data-mdc-ripple-is-unbounded][data-demo-no-js]::before,
-      .mdc-ripple-surface[data-mdc-ripple-is-unbounded][data-demo-no-js]::after {
-        height: 100%;
-        left: 0;
-        top: 0;
-        width: 100%;
+      .demo-surface[data-mdc-ripple-is-unbounded] {
+        /* Override width/height from above to match icon size, and adjust padding for hitbox */
+        width: 24px;
+        height: 24px;
+        padding: 12px;
       }
 
       button.demo-surface {
@@ -68,7 +60,6 @@
         appearance: none;
       }
 
-
       body {
         font-family: sans-serif;
       }
@@ -79,6 +70,8 @@
         color: red;
         border-radius: 4px;
         display: none;
+        position: absolute;
+        z-index: 10;
       }
 
       .unsupported #unsupported-msg {
@@ -118,25 +111,23 @@
       }
     </style>
   </head>
-  <body>
+  <body class="mdc-typography">
     <aside id="unsupported-msg">
       It appears your browser does not support custom properties, or has a broken implementation.
-      Please try this in Desktop Chrome or Desktop Firefox.
+      Please try this in Chrome, Firefox, or Safari 10+.
     </aside>
     <header class="mdc-toolbar mdc-toolbar--fixed">
       <div class="mdc-toolbar__row">
         <section class="mdc-toolbar__section mdc-toolbar__section--align-start">
-          <span class="catalog-back">
-            <a href="/"><i class="material-icons">&#xE5C4;</i></a>
-          </span>
+          <a href="/" class="catalog-back mdc-toolbar__menu-icon"><i class="material-icons">&#xE5C4;</i></a>
           <span class="mdc-toolbar__title catalog-title">Ripple</span>
         </section>
       </div>
     </header>
     <main>
       <div class="mdc-toolbar-fixed-adjust"></div>
-      <section class="hero mdc-ripple-surface">
-      </section>
+
+      <section class="hero mdc-ripple-surface"></section>
 
       <section class="example">
         <div>
@@ -178,8 +169,8 @@
           </div>
           <div
             class="mdc-ripple-surface mdc-ripple-surface--accent
-                   mdc-theme--accent demo-surface mdc-elevation--z2" tabindex="0">
-            Accent
+                   mdc-theme--secondary demo-surface mdc-elevation--z2" tabindex="0">
+            Secondary
           </div>
         </div>
         <div>
@@ -191,11 +182,10 @@
           </div>
           <div
             class="mdc-ripple-surface mdc-ripple-surface--accent
-                   mdc-theme--accent demo-surface mdc-elevation--z2" data-demo-no-js tabindex="0">
-            Accent
+                   mdc-theme--secondary demo-surface mdc-elevation--z2" data-demo-no-js tabindex="0">
+            Secondary
           </div>
         </div>
-
       </section>
       <section class="example">
         <div>
@@ -206,16 +196,20 @@
           <h2>Applied to <code>&lt;button&gt;</code> element - CSS Only</h2>
           <button type="button" class="mdc-ripple-surface mdc-elevation--z2 demo-surface" data-demo-no-js>button</button>
         </div>
-
       </section>
     </main>
-    <script src="assets/material-components-web.js" charset="utf-8"></script>
+
+    <script src="/assets/material-components-web.js" async></script>
     <script>
-      (function(global) {
+      demoReady(function() {
+        if (!mdc.ripple.util.supportsCssVariables(window)) {
+          document.documentElement.classList.add('unsupported');
+        }
+
         [].forEach.call(document.querySelectorAll('.mdc-ripple-surface:not([data-demo-no-js])'), function(surface) {
           mdc.ripple.MDCRipple.attachTo(surface);
         });
-      })(this);
+      });
     </script>
   </body>
 </html>

@@ -1,52 +1,72 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 import {assert} from 'chai';
+import {createMockWindowForCssVariables} from './helpers';
 import td from 'testdouble';
 import * as util from '../../../packages/mdc-ripple/util';
 
 suite('MDCRipple - util');
 
 test('#supportsCssVariables returns true when CSS.supports() returns true for css vars', () => {
-  const windowObj = {
-    CSS: {
-      supports: td.func('.supports'),
-    },
-  };
+  const windowObj = createMockWindowForCssVariables();
   td.when(windowObj.CSS.supports('--css-vars', td.matchers.anything())).thenReturn(true);
-  assert.isOk(util.supportsCssVariables(windowObj));
+  assert.isOk(util.supportsCssVariables(windowObj, true));
+  assert.equal(windowObj.appendedNodes, 0, 'All nodes created in #supportsCssVariables should be removed');
 });
 
 test('#supportsCssVariables returns true when feature-detecting its way around Safari < 10', () => {
-  const windowObj = {
-    CSS: {
-      supports: td.func('.supports'),
-    },
-  };
+  const windowObj = createMockWindowForCssVariables();
   td.when(windowObj.CSS.supports('--css-vars', td.matchers.anything())).thenReturn(false);
   td.when(windowObj.CSS.supports(td.matchers.contains('(--css-vars:'))).thenReturn(true);
   td.when(windowObj.CSS.supports('color', '#00000000')).thenReturn(true);
-  assert.isOk(util.supportsCssVariables(windowObj), 'true iff both CSS Vars and #rgba are supported');
+  assert.isOk(util.supportsCssVariables(windowObj, true), 'true iff both CSS Vars and #rgba are supported');
 
   td.when(windowObj.CSS.supports(td.matchers.contains('(--css-vars:'))).thenReturn(false);
-  assert.isNotOk(util.supportsCssVariables(windowObj), 'false if CSS Vars are supported but not #rgba');
+  assert.isNotOk(util.supportsCssVariables(windowObj, true), 'false if #rgba is supported but not CSS Vars');
   td.when(windowObj.CSS.supports(td.matchers.contains('(--css-vars:'))).thenReturn(true);
 
   td.when(windowObj.CSS.supports('color', '#00000000')).thenReturn(false);
-  assert.isNotOk(util.supportsCssVariables(windowObj), 'false if #rgba is supported but not CSS Vars');
+  assert.isNotOk(util.supportsCssVariables(windowObj, true), 'false if CSS Vars are supported but not #rgba');
+  assert.equal(windowObj.appendedNodes, 0, 'All nodes created in #supportsCssVariables should be removed');
+});
+
+test('#supportsCssVariables returns true when getComputedStyle returns null (e.g. Firefox hidden iframes)', () => {
+  const windowObj = createMockWindowForCssVariables();
+  td.when(windowObj.CSS.supports('--css-vars', td.matchers.anything())).thenReturn(true);
+  td.when(windowObj.getComputedStyle(td.matchers.anything())).thenReturn(null);
+  assert.isOk(util.supportsCssVariables(windowObj, true), 'true if getComputedStyle returns null');
+  assert.equal(windowObj.appendedNodes, 0, 'All nodes created in #supportsCssVariables should be removed');
+});
+
+test('#supportsCssVariables returns false when feature-detecting Edge var() bug with pseudo selectors', () => {
+  const windowObj = createMockWindowForCssVariables();
+  td.when(windowObj.CSS.supports('--css-vars', td.matchers.anything())).thenReturn(true);
+  td.when(windowObj.getComputedStyle(td.matchers.anything())).thenReturn({
+    borderTopStyle: 'solid',
+  });
+  assert.isNotOk(util.supportsCssVariables(windowObj, true), 'false if Edge bug is detected');
+  assert.equal(windowObj.appendedNodes, 0, 'All nodes created in #supportsCssVariables should be removed');
 });
 
 test('#supportsCssVariables returns false when CSS.supports() returns false for css vars', () => {
@@ -56,7 +76,7 @@ test('#supportsCssVariables returns false when CSS.supports() returns false for 
     },
   };
   td.when(windowObj.CSS.supports('--css-vars', td.matchers.anything())).thenReturn(false);
-  assert.isNotOk(util.supportsCssVariables(windowObj));
+  assert.isNotOk(util.supportsCssVariables(windowObj, true));
 });
 
 test('#supportsCssVariables returns false when CSS.supports is not a function', () => {
@@ -65,14 +85,14 @@ test('#supportsCssVariables returns false when CSS.supports is not a function', 
       supports: 'nope',
     },
   };
-  assert.isNotOk(util.supportsCssVariables(windowObj));
+  assert.isNotOk(util.supportsCssVariables(windowObj, true));
 });
 
 test('#supportsCssVariables returns false when CSS is not an object', () => {
   const windowObj = {
     CSS: null,
   };
-  assert.isNotOk(util.supportsCssVariables(windowObj));
+  assert.isNotOk(util.supportsCssVariables(windowObj, true));
 });
 
 test('applyPassive returns an options object for browsers that support passive event listeners', () => {

@@ -10,194 +10,130 @@ path: /catalog/input-controls/radio-buttons/
 
 <!--<div class="article__asset">
   <a class="article__asset-link"
-     href="https://material-components-web.appspot.com/radio.html">
+     href="https://material-components.github.io/material-components-web-catalog/#/component/radio">
     <img src="{{ site.rootpath }}/images/mdc_web_screenshots/radios.png" width="60" alt="Radio buttons screenshot">
   </a>
 </div>-->
 
-The MDC Radio Button component provides a radio button adhering to the [Material Design Specification](https://material.io/guidelines/components/selection-controls.html#selection-controls-radio-button).
-It requires no Javascript out of the box, but can be enhanced with Javascript to provide better
-interaction UX as well as a component-level API for state modification.
+Radio buttons allow the user to select one option from a set while seeing all available options.
 
 ## Design & API Documentation
 
 <ul class="icon-list">
   <li class="icon-list-item icon-list-item--spec">
-    <a href="https://material.io/guidelines/components/selection-controls.html#selection-controls-radio-button">Material Design guidelines: Selection Controls – Radio buttons</a>
+    <a href="https://material.io/go/design-radio-buttons">Material Design guidelines: Selection Controls – Radio buttons</a>
   </li>
   <li class="icon-list-item icon-list-item--link">
-    <a href="https://material-components-web.appspot.com/radio.html">Demo</a>
+    <a href="https://material-components.github.io/material-components-web-catalog/#/component/radio">Demo</a>
   </li>
 </ul>
 
 ## Installation
 
 ```
-npm install --save @material/radio
+npm install @material/radio
 ```
 
-## Usage
+## Basic Usage
+
+We recommend using MDC Radio with [MDC Form Field](../mdc-form-field) for enhancements such as label alignment, label activation of the ripple interaction effect, and RTL-awareness.
+
+### HTML Structure
 
 ```html
-<div class="mdc-radio">
-  <input class="mdc-radio__native-control" type="radio" id="radio-1" name="radios" checked>
-  <div class="mdc-radio__background">
-    <div class="mdc-radio__outer-circle"></div>
-    <div class="mdc-radio__inner-circle"></div>
+<div class="mdc-form-field">
+  <div class="mdc-radio">
+    <input class="mdc-radio__native-control" type="radio" id="radio-1" name="radios" checked>
+    <div class="mdc-radio__background">
+      <div class="mdc-radio__outer-circle"></div>
+      <div class="mdc-radio__inner-circle"></div>
+    </div>
   </div>
+  <label for="radio-1">Radio 1</label>
 </div>
-<label id="radio-1-label" for="radio-1">Radio 1</label>
-
-<div class="mdc-radio">
-  <input class="mdc-radio__native-control" type="radio" id="radio-2" name="radios">
-  <div class="mdc-radio__background">
-    <div class="mdc-radio__outer-circle"></div>
-    <div class="mdc-radio__inner-circle"></div>
-  </div>
-</div>
-<label id="radio-2-label" for="radio-2">Radio 2</label>
 ```
 
-> TODO(TK): Talk about `mdc-form-field` here.
+### Styles
 
-#### Disabled Radios
-
-```html
-<div class="mdc-radio mdc-radio--disabled">
-  <input class="mdc-radio__native-control" type="radio" id="radio-1" name="radios" disabled>
-  <div class="mdc-radio__background">
-    <div class="mdc-radio__outer-circle"></div>
-    <div class="mdc-radio__inner-circle"></div>
-  </div>
-</div>
-<label id="radio-1-label" for="radio-1">Disabled Radio 1</label>
+```scss
+@import "@material/form-field/mdc-form-field";
+@import "@material/radio/mdc-radio";
 ```
 
-Note that `mdc-radio--disabled` is necessary on the root element in order to avoid having the ripple
-elements intercept pointer events when using JS. When using the CSS-only variation, this is also
-necessary to prevent hover states from activating.
+### JavaScript Instantiation
 
-### Using the JS Component
+The radio button will work without JavaScript, but you can enhance it with a ripple interaction effect by instantiating `MDCRadio` on the `mdc-radio` element. To activate the ripple effect upon interacting with the label, you must also instantiate `MDCFormField` on the `mdc-form-field` element and set the `MDCRadio` instance as its `input`.
 
-MDC Radio ships with Component / Foundation classes which provide enhanced interaction UX via
-[mdc-ripple](../mdc-ripple), as well as APIs for programmatically altering the radio's state.
-
-#### Including in code
-
-##### ES2015
-
-```javascript
-import {MDCRadio, MDCRadioFoundation} from 'mdc-radio';
-```
-
-##### CommonJS
-
-```javascript
-const mdcRadio = require('mdc-radio');
-const MDCRadio = mdcRadio.MDCRadio;
-const MDCRadioFoundation = mdcRadio.MDCRadioFoundation;
-```
-
-##### AMD
-
-```javascript
-require(['path/to/mdc-radio'], mdcRadio => {
-  const MDCRadio = mdcRadio.MDCRadio;
-  const MDCRadioFoundation = mdcRadio.MDCRadioFoundation;
-});
-```
-
-##### Global
-
-```javascript
-const MDCRadio = mdc.radio.MDCRadio;
-const MDCRadioFoundation = mdc.radio.MDCRadioFoundation;
-```
-
-#### Automatic Instantiation
-
-If you do not care about retaining the component instance for the radio, simply call `attachTo()`
-and pass it a DOM element.
-
-```javascript
-mdc.radio.MDCRadio.attachTo(document.querySelector('.mdc-radio'));
-```
-
-#### Manual Instantiation
-
-Radios can easily be initialized using their default constructors as well, similar to `attachTo`.
-
-```javascript
-import {MDCRadio} from 'mdc-radio';
+```js
+import {MDCFormField} from '@material/form-field';
+import {MDCRadio} from '@material/radio';
 
 const radio = new MDCRadio(document.querySelector('.mdc-radio'));
+const formField = new MDCFormField(document.querySelector('.mdc-form-field'));
+formField.input = radio;
 ```
 
-#### MDCRadio API
+> See [Importing the JS component](../../docs/importing-js.md) for more information on how to import JavaScript.
 
-Similar to regular DOM elements, the `MDCRadio` functionality is exposed through accessor
-methods.
+## Variants
 
-##### MDCRadio.checked
+### Disabled
 
-Boolean. Proxies to the foundation's `isChecked`/`setChecked` methods when retrieved/set
-respectively.
+To disable a radio button, add the `mdc-radio--disabled` class to the root element and set the `disabled` attribute on the `<input>` element.
+Disabled radio buttons cannot be interacted with and have no visual interaction effect.
 
-##### MDCRadio.disabled
+```html
+<div class="mdc-form-field">
+  <div class="mdc-radio mdc-radio--disabled">
+    <input class="mdc-radio__native-control" type="radio" id="radio-1" name="radios" disabled>
+    <div class="mdc-radio__background">
+      <div class="mdc-radio__outer-circle"></div>
+      <div class="mdc-radio__inner-circle"></div>
+    </div>
+  </div>
+  <label for="radio-1">Radio 1</label>
+</div>
+```
 
-Boolean. Proxies to the foundation's `isDisabled/setDisabled` methods when retrieved/set
-respectively.
+## Style Customization
 
-##### MDCRadio.value
+MDC Radio uses [MDC Theme](../mdc-theme)'s `secondary` color by default. Use the following mixins to customize it.
 
-String. Proxies to the foundation's `getValue/setValue` methods when retrieved/set
-respectively.
+### Sass Mixins
 
-### Using the Foundation Class
+Mixin | Description
+--- | ---
+`mdc-radio-unchecked-stroke-color($color)` | Sets the stroke color of an unchecked radio button
+`mdc-radio-checked-stroke-color($color)` | Sets the stroke color of a checked radio button
+`mdc-radio-ink-color($color)` | Sets the ink color of a radio button
+`mdc-radio-focus-indicator-color($color)` | Sets the color of the focus indicator
 
-Since MDC Radio is primarily driven by its native control, the adapter API is extremely simple.
+#### Caveat: Edge and CSS Custom Properties
 
-| Method Signature | Description |
-| --- | --- |
-| `getNativeControl() => HTMLInputElement?` | Returns the native radio control, if available. Note that if this control is not available, the methods that rely on it will exit gracefully.|
-| `addClass(className: string) => void` | Adds a class to the root element. |
-| `removeClass(className: string) => void` | Removes a class from the root element. |
+In browsers that fully support CSS custom properties, the above mixins will work if you pass in a [MDC Theme](../mdc-theme) property (e.g. `primary`) as an argument. However, Edge does not fully support CSS custom properties. If you are using any of the Sass mixins, you must pass in an actual color value for support in Edge.
 
+## `MDCRadio` Properties and Methods
 
-#### The full foundation API
+Property | Value Type | Description
+--- | --- | ---
+`checked` | Boolean | Setter/getter for the radio's checked state
+`disabled` | Boolean | Setter/getter for the radio's disabled state. Setter proxies to foundation's `setDisabled` method
+`value` | String | Setter/getter for the radio's value
 
-##### MDCRadioFoundation.isChecked() => boolean
+## Usage within Web Frameworks
 
-Returns the value of `adapter.getNativeControl().checked`. Returns `false` if `getNativeControl()`
-does not return an object.
+If you are using a JavaScript framework, such as React or Angular, you can create a Radio button for your framework. Depending on your needs, you can use the _Simple Approach: Wrapping MDC Web Vanilla Components_, or the _Advanced Approach: Using Foundations and Adapters_. Please follow the instructions [here](../../docs/integrating-into-frameworks.md).
 
-##### MDCRadioFoundation.setChecked(checked: boolean) => void
+### `MDCRadioAdapter`
 
-Sets the value of `adapter.getNativeControl().checked`. Does nothing if `getNativeControl()` does
-not return an object.
+Method Signature | Description
+--- | ---
+`setNativeControlDisabled(disabled: boolean) => void` | Sets the input's `disabled` property to the given value
+`addClass(className: string) => void` | Adds a class to the root element
+`removeClass(className: string) => void` | Removes a class from the root element
 
-##### MDCRadioFoundation.isDisabled() => boolean
+### `MDCRadioFoundation`
 
-Returns the value of `adapter.getNativeControl().disabled`. Returns `false` if `getNativeControl()`
-does not return an object.
-
-##### MDCRadioFoundation.setDisabled(disabled: boolean) => void
-
-Sets the value of `adapter.getNativeControl().disabled`. Also adds/removes the `mdc-radio--disabled`
-class based whether or not `disabled` is true. Gracefully handles the absence of a return value of
-`getNativeControl()`.
-
-##### MDCRadioFoundation.getValue() => string
-
-Returns the value of `adapter.getNativeControl().value`. Returns `null` if `getNativeControl()`
-does not return an object.
-
-##### MDCRadioFoundation.setValue(value: string) => void
-
-Sets the value of `adapter.getNativeControl().value`. Does nothing if `getNativeControl()` does
-not return an object.
-
-## Theming
-
-MDC Radios use the theme's primary color by default for on states, and are completely dark theme
-aware.
+Method Signature | Description
+--- | ---
+`setDisabled(disabled: boolean) => void` | Sets the disabled value of the native control

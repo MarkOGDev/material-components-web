@@ -1,28 +1,37 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 import {assert} from 'chai';
 import td from 'testdouble';
 
-import {testFoundation, captureHandlers} from './helpers';
+import {captureHandlers} from '../helpers/foundation';
+import {testFoundation} from './helpers';
 import {cssClasses, strings} from '../../../packages/mdc-ripple/constants';
 
 suite('MDCRippleFoundation - General Events');
 
-testFoundation('re-lays out the component on resize event', ({foundation, adapter, mockRaf}) => {
+testFoundation('re-lays out the component on resize event for unbounded ripple', ({foundation, adapter, mockRaf}) => {
+  td.when(adapter.isUnbounded()).thenReturn(true);
   td.when(adapter.computeBoundingRect()).thenReturn({
     width: 100,
     height: 200,
@@ -44,17 +53,16 @@ testFoundation('re-lays out the component on resize event', ({foundation, adapte
     return;
   }
 
-  td.verify(adapter.updateCssVariable(strings.VAR_SURFACE_WIDTH, '100px'));
-  td.verify(adapter.updateCssVariable(strings.VAR_SURFACE_HEIGHT, '200px'));
+  td.verify(adapter.updateCssVariable(strings.VAR_FG_SIZE, '120px'));
 
   resizeHandler();
   mockRaf.flush();
 
-  td.verify(adapter.updateCssVariable(strings.VAR_SURFACE_WIDTH, '50px'));
-  td.verify(adapter.updateCssVariable(strings.VAR_SURFACE_HEIGHT, '100px'));
+  td.verify(adapter.updateCssVariable(strings.VAR_FG_SIZE, '60px'));
 });
 
 testFoundation('debounces layout within the same frame on resize', ({foundation, adapter, mockRaf}) => {
+  td.when(adapter.isUnbounded()).thenReturn(true);
   td.when(adapter.computeBoundingRect()).thenReturn({
     width: 100,
     height: 200,
@@ -80,7 +88,7 @@ testFoundation('debounces layout within the same frame on resize', ({foundation,
   resizeHandler();
   mockRaf.flush();
   td.verify(
-    adapter.updateCssVariable(strings.VAR_SURFACE_WIDTH, td.matchers.isA(String)),
+    adapter.updateCssVariable(strings.VAR_FG_SIZE, td.matchers.isA(String)),
     {
       times: 2,
     }
@@ -88,7 +96,7 @@ testFoundation('debounces layout within the same frame on resize', ({foundation,
 });
 
 testFoundation('activates the background on focus', ({foundation, adapter, mockRaf}) => {
-  const handlers = captureHandlers(adapter);
+  const handlers = captureHandlers(adapter, 'registerInteractionHandler');
   foundation.init();
   mockRaf.flush();
 
@@ -98,7 +106,7 @@ testFoundation('activates the background on focus', ({foundation, adapter, mockR
 });
 
 testFoundation('deactivates the background on blur', ({foundation, adapter, mockRaf}) => {
-  const handlers = captureHandlers(adapter);
+  const handlers = captureHandlers(adapter, 'registerInteractionHandler');
   foundation.init();
   mockRaf.flush();
 

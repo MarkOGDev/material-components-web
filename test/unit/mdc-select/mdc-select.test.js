@@ -1,54 +1,127 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 import {assert} from 'chai';
 import bel from 'bel';
 import domEvents from 'dom-events';
 import td from 'testdouble';
+import {createMockRaf} from '../helpers/raf';
+import {supportsCssVariables} from '../../../packages/mdc-ripple/util';
 
-import {MDCSelect} from '../../../packages/mdc-select';
-import {strings} from '../../../packages/mdc-select/constants';
+import {MDCRipple, MDCRippleFoundation} from '../../../packages/mdc-ripple/index';
+import {MDCSelect} from '../../../packages/mdc-select/index';
+import {cssClasses, strings} from '../../../packages/mdc-select/constants';
+import {MDCNotchedOutline} from '../../../packages/mdc-notched-outline/index';
+import {MDCSelectIcon} from '../../../packages/mdc-select/icon/index';
+import {MDCSelectHelperTextFoundation} from '../../../packages/mdc-select/helper-text/index';
 
-class FakeMenu {
+const LABEL_WIDTH = 100;
+
+class FakeLabel {
   constructor() {
-    this.items = [
-      bel`<div id="item-1">Item 1</div>`,
-      bel`<div id="item-2">Item 2</div>`,
-      bel`<div id="item-3">Item 3</div>`,
-      bel`<div>Item 4 no id</div>`,
-    ];
-    this.listen = td.func('menu.listen');
-    this.unlisten = td.func('menu.unlisten');
-    this.show = td.func('menu.show');
-    this.hide = td.func('menu.hide');
-    this.open = false;
+    this.float = td.func('label.float');
+    this.getWidth = td.func('label.getWidth');
+
+    td.when(this.getWidth()).thenReturn(LABEL_WIDTH);
+  }
+}
+
+class FakeBottomLine {
+  constructor() {
+    this.activate = td.func('bottomLine.activate');
+    this.deactivate = td.func('bottomLine.deactivate');
+    this.setRippleCenter = td.func('bottomLine.setRippleCenter');
+  }
+}
+
+class FakeOutline {
+  constructor() {
+    this.destroy = td.func('.destroy');
+    this.notch = td.func('.notch');
+    this.closeNotch = td.func('.notch');
+  }
+}
+
+class FakeIcon {
+  constructor() {
+    this.destroy = td.func('.destroy');
+  }
+}
+
+class FakeHelperText {
+  constructor() {
+    this.destroy = td.func('.destroy');
   }
 }
 
 function getFixture() {
   return bel`
-    <div class="mdc-select" role="listbox" tabindex="0">
-      <span class="mdc-select__selected-text">Pick a food group</span>
-      <div class="mdc-select__menu mdc-simple-menu">
-        <ul class="mdc-simple-menu__items">
-          <li class="mdc-list-item" role="option" tabindex="0">An option</li>
-        </ul>
+    <div class="mdc-select">
+     <i class="material-icons mdc-select__icon">code</i>
+     <select class="mdc-select__native-control">
+        <option value="" disabled selected></option>
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple">
+          Apple
+        </option>
+      </select>
+      <label class="mdc-floating-label">Pick a Food Group</label>
+      <div class="mdc-line-ripple"></div>
+    </div>
+\  `;
+}
+
+function getOutlineFixture() {
+  return bel`
+    <div class="mdc-select mdc-select--outlined">
+      <i class="material-icons mdc-select__icon">code</i>
+      <select class="mdc-select__native-control">
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple">
+          Apple
+        </option>
+      </select>
+      <label class="mdc-floating-label">Pick a Food Group</label>
+      <div class="mdc-notched-outline">
+        <svg>
+          <path class="mdc-notched-outline__path">
+        </svg>
       </div>
+      <div class="mdc-notched-outline__idle"/>
     </div>
   `;
+}
+
+function getHelperTextFixture(root = getFixture()) {
+  const containerDiv = document.createElement('div');
+  root.querySelector('.mdc-select__native-control').setAttribute('aria-controls', 'test-helper-text');
+  containerDiv.appendChild(root);
+  containerDiv.appendChild(bel`<p class="mdc-select-helper-text" id="test-helper-text">Hello World</p>`);
+  return containerDiv;
 }
 
 suite('MDCSelect');
@@ -57,324 +130,597 @@ test('attachTo returns a component instance', () => {
   assert.isOk(MDCSelect.attachTo(getFixture()) instanceof MDCSelect);
 });
 
-function setupTest() {
-  const menu = new FakeMenu();
-  const fixture = getFixture();
-  const menuEl = fixture.querySelector('.mdc-select__menu');
-  const component = new MDCSelect(fixture, /* foundation */ undefined, () => menu);
-  return {menu, menuEl, fixture, component};
+function setupTest(hasOutline = false, hasLabel = true, hasHelperText = false) {
+  const bottomLine = new FakeBottomLine();
+  const label = new FakeLabel();
+  const fixture = hasOutline ? getOutlineFixture() : getFixture();
+  const container = hasHelperText ? getHelperTextFixture(fixture) : null;
+  const nativeControl = fixture.querySelector('.mdc-select__native-control');
+  const labelEl = fixture.querySelector('.mdc-floating-label');
+  const bottomLineEl = fixture.querySelector('.mdc-line-ripple');
+  const outline = new FakeOutline();
+  const icon = new FakeIcon();
+  const helperText = new FakeHelperText();
+
+  if (!hasLabel) {
+    fixture.removeChild(labelEl);
+  }
+
+  if (container) {
+    document.body.appendChild(container);
+  }
+
+  const component = new MDCSelect(fixture, /* foundation */ undefined,
+    () => label, () => bottomLine, () => outline, /* MDCMenu */ undefined, () => icon, () => helperText);
+
+  return {fixture, nativeControl, label, labelEl, bottomLine, bottomLineEl, component, outline, icon, helperText,
+    container};
 }
-
-test('options returns the menu items', () => {
-  const {menu, component} = setupTest();
-  assert.equal(component.options, menu.items);
-});
-
-test('selectOptions returns a NodeList containing the node with "aria-selected" as an attr', () => {
-  const {component, fixture} = setupTest();
-  const option = fixture.querySelector('[role="option"]');
-  assert.equal(component.selectedOptions.length, 0, 'No selected options when none selected');
-  option.setAttribute('aria-selected', 'true');
-  assert.equal(component.selectedOptions.length, 1, 'One selected option when element has aria-selected');
-  assert.equal(component.selectedOptions[0], option, 'Option within selected options is the selected option');
-});
 
 test('#get/setSelectedIndex', () => {
   const {component} = setupTest();
-  assert.equal(component.selectedIndex, -1);
+  assert.equal(component.selectedIndex, 0);
   component.selectedIndex = 1;
   assert.equal(component.selectedIndex, 1);
 });
 
-test('#get/setDisabled', () => {
+test('#get/set disabled', () => {
   const {component} = setupTest();
-  assert.equal(component.disabled, false);
+  assert.isFalse(component.disabled);
   component.disabled = true;
-  assert.isOk(component.disabled);
+  assert.isTrue(component.disabled);
+});
+
+test('#get/set required', () => {
+  const {component, nativeControl} = setupTest();
+  assert.isFalse(component.required);
+
+  component.required = true;
+  assert.isTrue(component.required);
+  assert.isTrue(nativeControl.required);
 });
 
 test('#get value', () => {
   const {component} = setupTest();
   assert.equal(component.value, '');
+  component.selectedIndex = 2;
+  assert.equal(component.value, 'apple');
   component.selectedIndex = 1;
-  assert.equal(component.value, 'item-2');
-  component.selectedIndex = 3;
-  assert.equal(component.value, 'Item 4 no id');
+  assert.equal(component.value, 'orange');
 });
 
-test('#item returns the menu item at the specified index', () => {
-  const {menu, component} = setupTest();
-  assert.equal(component.item(1), menu.items[1]);
+test('#set value sets the value on the <select>', () => {
+  const {component, nativeControl} = setupTest();
+  component.value = 'orange';
+  assert.equal(nativeControl.value, 'orange');
 });
 
-test('#item returns null if index out of bounds', () => {
+test('#set value calls foundation.handleChange', () => {
   const {component} = setupTest();
-  assert.equal(component.item(100), null);
+  component.foundation_.handleChange = td.func();
+  component.value = 'orange';
+  td.verify(component.foundation_.handleChange(true), {times: 1});
 });
 
-test('#nameditem returns the item whose id matches the given key', () => {
-  const {menu, component} = setupTest();
-  assert.equal(component.nameditem('item-1'), menu.items[0]);
-});
-
-test('#nameditem returns the item whose "name" key matches the given key', () => {
-  const {menu, component} = setupTest();
-  const item = menu.items[0];
-  const name = item.id;
-  item.id = '';
-  item.removeAttribute('id');
-  item.setAttribute('name', name);
-  assert.equal(component.nameditem(name), menu.items[0]);
-});
-
-test('#nameditem returns null when no id or name matches the given key', () => {
+test('#set selectedIndex calls foundation.handleChange', () => {
   const {component} = setupTest();
-  assert.equal(component.nameditem('nonexistant'), null);
+  component.foundation_.handleChange = td.func();
+  component.selectedIndex = 1;
+  td.verify(component.foundation_.handleChange(true), {times: 1});
 });
 
-test('#initialSyncWithDOM sets the selected index if a menu item contains an aria-selected attribute', () => {
-  const menu = new FakeMenu();
-  const fixture = getFixture();
-  // Insert menu item into fixture to pretend like the fake menu items are part of the component under test.
-  menu.items[1].setAttribute('aria-selected', 'true');
-  fixture.appendChild(menu.items[1]);
+test('#set disabled calls foundation.setDisabled', () => {
+  const {component} = setupTest();
+  component.foundation_.setDisabled = td.func();
+  component.disabled = true;
+  td.verify(component.foundation_.setDisabled(true), {times: 1});
+});
 
-  const component = new MDCSelect(fixture, /* foundation */ undefined, () => menu);
+test('#set leadingIconAriaLabel calls foundation.setLeadingIconAriaLabel', () => {
+  const {component} = setupTest();
+  component.foundation_.setLeadingIconAriaLabel = td.func();
+  component.leadingIconAriaLabel = true;
+  td.verify(component.foundation_.setLeadingIconAriaLabel(true), {times: 1});
+});
+
+test('#set leadingIconContent calls foundation.setLeadingIconAriaLabel', () => {
+  const {component} = setupTest();
+  component.foundation_.setLeadingIconContent = td.func();
+  component.leadingIconContent = 'hello_world';
+  td.verify(component.foundation_.setLeadingIconContent('hello_world'), {times: 1});
+});
+
+test('#set helperTextContent calls foundation.setHelperTextContent', () => {
+  const {component} = setupTest();
+  component.foundation_.setHelperTextContent = td.func();
+  component.helperTextContent = 'hello_world';
+  td.verify(component.foundation_.setHelperTextContent('hello_world'), {times: 1});
+});
+
+test(`#initialize does not add the ${cssClasses.WITH_LEADING_ICON} class if there is no leading icon`, () => {
+  const fixture = bel`
+    <div class="mdc-select">
+      <select class="mdc-select__native-control">
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple" selected>
+          Apple
+        </option>
+      </select>
+      <label class="mdc-floating-label">Pick a Food Group</label>
+      <div class="mdc-line-ripple"></div>
+    </div>
+  `;
+  const component = new MDCSelect(fixture, /* foundation */ undefined);
+  assert.isFalse(fixture.classList.contains(cssClasses.WITH_LEADING_ICON));
+  component.destroy();
+});
+
+test('#initialSyncWithDOM sets the selected index if an option has the selected attr', () => {
+  const fixture = bel`
+    <div class="mdc-select">
+      <select class="mdc-select__native-control">
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple" selected>
+          Apple
+        </option>
+      </select>
+      <label class="mdc-floating-label">Pick a Food Group</label>
+      <div class="mdc-line-ripple"></div>
+    </div>
+  `;
+  const component = new MDCSelect(fixture, /* foundation */ undefined);
   assert.equal(component.selectedIndex, 1);
 });
 
-test('#initialSyncWithDOM disables the menu if aria-disabled="true" is found on the element', () => {
-  const fixture = getFixture();
-  fixture.setAttribute('aria-disabled', 'true');
+test('#initialSyncWithDOM disables the select if the disabled attr is found on the <select>', () => {
+  const fixture = bel`
+    <div class="mdc-select">
+      <select class="mdc-select__native-control" disabled>
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple" selected>
+          Apple
+        </option>
+      </select>
+      <label class="mdc-floating-label"></label>
+      <div class="mdc-line-ripple"></div>
+    </div>
+  `;
   const component = new MDCSelect(fixture);
-  assert.isOk(component.disabled);
+  assert.isTrue(component.disabled);
 });
 
 test('adapter#addClass adds a class to the root element', () => {
   const {component, fixture} = setupTest();
   component.getDefaultFoundation().adapter_.addClass('foo');
-  assert.isOk(fixture.classList.contains('foo'));
+  assert.isTrue(fixture.classList.contains('foo'));
 });
 
 test('adapter#removeClass removes a class from the root element', () => {
   const {component, fixture} = setupTest();
   fixture.classList.add('foo');
   component.getDefaultFoundation().adapter_.removeClass('foo');
-  assert.isNotOk(fixture.classList.contains('foo'));
+  assert.isFalse(fixture.classList.contains('foo'));
 });
 
-test('adapter#setAttr sets an attribute with a given value on the root element', () => {
+test('adapter#hasClass returns true if a class exists on the root element', () => {
   const {component, fixture} = setupTest();
-  component.getDefaultFoundation().adapter_.setAttr('aria-disabled', 'true');
-  assert.equal(fixture.getAttribute('aria-disabled'), 'true');
+  fixture.classList.add('foo');
+  assert.isTrue(component.getDefaultFoundation().adapter_.hasClass('foo'));
 });
 
-test('adapter#rmAttr removes an attribute from the root element', () => {
-  const {component, fixture} = setupTest();
-  fixture.setAttribute('aria-disabled', 'true');
-  component.getDefaultFoundation().adapter_.rmAttr('aria-disabled');
-  assert.isNotOk(fixture.hasAttribute('aria-disabled'));
+test('adapter_#floatLabel does not throw error if label does not exist', () => {
+  const fixture = bel`
+    <div class="mdc-select">
+      <select class="mdc-select__native-control">
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple" selected>
+          Apple
+        </option>
+      </select>
+      <div class="mdc-line-ripple"></div>
+    </div>
+  `;
+  const component = new MDCSelect(fixture);
+  assert.doesNotThrow(
+    () => component.getDefaultFoundation().adapter_.floatLabel('foo'));
 });
 
-test('adapter#computeBoundingRect returns the result of getBoundingClientRect() on the root element', () => {
-  const {component, fixture} = setupTest();
-  assert.deepEqual(
-    component.getDefaultFoundation().adapter_.computeBoundingRect(),
-    fixture.getBoundingClientRect()
-  );
+test('adapter#activateBottomLine and adapter.deactivateBottomLine ' +
+  'does not throw error if bottomLine does not exist', () => {
+  const fixture = bel`
+    <div class="mdc-select">
+      <select class="mdc-select__native-control">
+        <option value="orange">
+          Orange
+        </option>
+        <option value="apple" selected>
+          Apple
+        </option>
+      </select>
+      <label class="mdc-floating-label"></label>
+    </div>
+  `;
+  const component = new MDCSelect(fixture);
+  assert.doesNotThrow(
+    () => component.getDefaultFoundation().adapter_.activateBottomLine());
+  assert.doesNotThrow(
+    () => component.getDefaultFoundation().adapter_.deactivateBottomLine());
 });
 
-test('adapter#registerInteractionHandler adds an event listener to the root element', () => {
-  const {component, fixture} = setupTest();
-  const listener = td.func('eventlistener');
-  component.getDefaultFoundation().adapter_.registerInteractionHandler('click', listener);
-  domEvents.emit(fixture, 'click');
-  td.verify(listener(td.matchers.anything()));
+
+test('adapter#isRtl returns true when the root element is in an RTL context' +
+  'and false otherwise', () => {
+  const wrapper = bel`<div dir="rtl"></div>`;
+  const {fixture, component} = setupTest();
+  assert.isFalse(component.getDefaultFoundation().adapter_.isRtl());
+
+  wrapper.appendChild(fixture);
+  document.body.appendChild(wrapper);
+  assert.isTrue(component.getDefaultFoundation().adapter_.isRtl());
+
+  document.body.removeChild(wrapper);
 });
 
-test('adapter#deregisterInteractionHandler removes an event listener from the root element', () => {
-  const {component, fixture} = setupTest();
-  const listener = td.func('eventlistener');
-  fixture.addEventListener('click', listener);
-  component.getDefaultFoundation().adapter_.deregisterInteractionHandler('click', listener);
-  domEvents.emit(fixture, 'click');
-  td.verify(listener(td.matchers.anything()), {times: 0});
+test('adapter#setDisabled sets the select to be disabled', () => {
+  const {component, nativeControl} = setupTest();
+  const adapter = component.getDefaultFoundation().adapter_;
+  assert.isFalse(nativeControl.disabled);
+  adapter.setDisabled(true);
+  assert.isTrue(nativeControl.disabled);
+  adapter.setDisabled(false);
+  assert.isFalse(nativeControl.disabled);
 });
 
-test('adapter#focus focuses on the root element', () => {
+test('adapter#setSelectedIndex sets the select selected index to the index specified', () => {
+  const {component, nativeControl} = setupTest();
+  const adapter = component.getDefaultFoundation().adapter_;
+  adapter.setSelectedIndex(1);
+  assert.equal(nativeControl.selectedIndex, 1);
+  adapter.setSelectedIndex(2);
+  assert.equal(nativeControl.selectedIndex, 2);
+});
+
+test('adapter#notifyChange emits event with index and value', () => {
+  const {component, nativeControl} = setupTest();
+  nativeControl.options[0].selected = false;
+  nativeControl.options[1].selected = true;
+
+  let detail;
+  component.listen(strings.CHANGE_EVENT, (event) => {
+    detail = event.detail;
+  });
+
+  const value = nativeControl.options[1].value;
+  component.getDefaultFoundation().adapter_.notifyChange(value);
+  assert.isDefined(detail);
+  assert.equal(detail.index, 1);
+  assert.equal(detail.value, value);
+});
+
+test('instantiates ripple', function() {
+  if (!supportsCssVariables(window, true)) {
+    this.skip(); // eslint-disable-line no-invalid-this
+    return;
+  }
+
+  const fixture = getFixture();
+  const raf = createMockRaf();
+
+  const component = MDCSelect.attachTo(fixture);
+  raf.flush();
+
+  assert.instanceOf(component.ripple, MDCRipple);
+  assert.isTrue(fixture.classList.contains(MDCRippleFoundation.cssClasses.ROOT));
+  raf.restore();
+});
+
+test(`#constructor instantiates an outline on the ${cssClasses.OUTLINE_SELECTOR} element if present`, () => {
+  const root = getFixture();
+  root.appendChild(bel`<div class="mdc-notched-outline"></div>`);
+  const component = new MDCSelect(root);
+  assert.instanceOf(component.outline_, MDCNotchedOutline);
+});
+
+test('handles ripple focus properly', function() {
+  if (!supportsCssVariables(window, true)) {
+    this.skip(); // eslint-disable-line no-invalid-this
+    return;
+  }
+
+  const fixture = getFixture();
+  const raf = createMockRaf();
+
+  MDCSelect.attachTo(fixture);
+  raf.flush();
+
+  const nativeControl = fixture.querySelector('.mdc-select__native-control');
+
+  domEvents.emit(nativeControl, 'focus');
+  raf.flush();
+
+  assert.isTrue(fixture.classList.contains(MDCRippleFoundation.cssClasses.BG_FOCUSED));
+  raf.restore();
+});
+
+test('#destroy removes the ripple', function() {
+  if (!supportsCssVariables(window, true)) {
+    this.skip(); // eslint-disable-line no-invalid-this
+    return;
+  }
+
+  const fixture = getFixture();
+  const raf = createMockRaf();
+
+  const component = new MDCSelect(fixture);
+  raf.flush();
+
+  assert.isTrue(fixture.classList.contains(MDCRippleFoundation.cssClasses.ROOT));
+  component.destroy();
+  raf.flush();
+
+  assert.isFalse(fixture.classList.contains(MDCRippleFoundation.cssClasses.ROOT));
+  raf.restore();
+});
+
+test('#destroy cleans up the outline if present', () => {
+  const {component, outline} = setupTest();
+  component.outline_ = outline;
+  component.destroy();
+  td.verify(outline.destroy());
+});
+
+test(`does not instantiate ripple when ${cssClasses.OUTLINED} class is present`, () => {
+  const hasOutline = true;
+  const {component} = setupTest(hasOutline);
+  assert.isUndefined(component.ripple);
+});
+
+test('adapter#floatLabel adds a class to the label', () => {
+  const {component, label} = setupTest();
+
+  component.getDefaultFoundation().adapter_.floatLabel('foo');
+  td.verify(label.float('foo'));
+});
+
+test('adapter#activateBottomLine adds active class to the bottom line', () => {
+  const {component, bottomLine} = setupTest();
+
+  component.getDefaultFoundation().adapter_.activateBottomLine();
+  td.verify(bottomLine.activate());
+});
+
+test('adapter#deactivateBottomLine removes active class from the bottom line', () => {
+  const {component, bottomLine} = setupTest();
+
+  component.getDefaultFoundation().adapter_.deactivateBottomLine();
+  td.verify(bottomLine.deactivate());
+});
+
+test('adapter#notchOutline proxies labelWidth and isRtl to the outline', () => {
+  const hasOutline = true;
+  const {component, outline} = setupTest(hasOutline);
+  const isRtl = false;
+
+  component.getDefaultFoundation().adapter_.notchOutline(LABEL_WIDTH, isRtl);
+  td.verify(outline.notch(LABEL_WIDTH, isRtl), {times: 1});
+});
+
+test('adapter#notchOutline does not proxy values to the outline if it does not exist', () => {
+  const hasOutline = false;
+  const {component, outline} = setupTest(hasOutline);
+  const isRtl = false;
+
+  component.getDefaultFoundation().adapter_.notchOutline(LABEL_WIDTH, isRtl);
+  td.verify(outline.notch(LABEL_WIDTH, isRtl), {times: 0});
+});
+
+test('adapter#getLabelWidth returns the width of the label', () => {
+  const {component} = setupTest();
+  assert.equal(component.getDefaultFoundation().adapter_.getLabelWidth(), LABEL_WIDTH);
+});
+
+test('adapter#getLabelWidth returns 0 if the label does not exist', () => {
+  const hasOutline = true;
+  const hasLabel = false;
+  const {component} = setupTest(hasOutline, hasLabel);
+
+  assert.equal(component.getDefaultFoundation().adapter_.getLabelWidth(), 0);
+});
+
+test(`adapter#setValid applies ${cssClasses.INVALID} properly`, () => {
+  const hasOutline = false;
+  const hasLabel = true;
+  const {component, fixture} = setupTest(hasOutline, hasLabel);
+  const adapter = component.getDefaultFoundation().adapter_;
+
+  adapter.setValid(false);
+  assert.isTrue(fixture.classList.contains(cssClasses.INVALID));
+
+  adapter.setValid(true);
+  assert.isFalse(fixture.classList.contains(cssClasses.INVALID));
+});
+
+test('change event triggers foundation.handleChange(true)', () => {
+  const {component, nativeControl} = setupTest();
+  component.foundation_.handleChange = td.func();
+  domEvents.emit(nativeControl, 'change');
+  td.verify(component.foundation_.handleChange(true), {times: 1});
+});
+
+test('focus event triggers foundation.handleFocus()', () => {
+  const {component, nativeControl} = setupTest();
+  component.foundation_.handleFocus = td.func();
+  domEvents.emit(nativeControl, 'focus');
+  td.verify(component.foundation_.handleFocus(), {times: 1});
+});
+
+test('blur event triggers foundation.handleBlur()', () => {
+  const {component, nativeControl} = setupTest();
+  component.foundation_.handleBlur = td.func();
+  domEvents.emit(nativeControl, 'blur');
+  td.verify(component.foundation_.handleBlur(), {times: 1});
+});
+
+test('#destroy removes the change handler', () => {
+  const {component, nativeControl} = setupTest();
+  component.foundation_.handleChange = td.func();
+  component.destroy();
+  domEvents.emit(nativeControl, 'change');
+  td.verify(component.foundation_.handleChange(true), {times: 0});
+});
+
+test('#destroy removes the focus handler', () => {
+  const {component, nativeControl} = setupTest();
+  component.foundation_.handleFocus = td.func();
+  component.destroy();
+  domEvents.emit(nativeControl, 'focus');
+  td.verify(component.foundation_.handleFocus(), {times: 0});
+});
+
+test('#destroy removes the blur handler', () => {
+  const {component, nativeControl} = setupTest();
+  component.foundation_.handleBlur = td.func();
+  component.destroy();
+  domEvents.emit(nativeControl, 'blur');
+  td.verify(component.foundation_.handleBlur(), {times: 0});
+});
+
+test('mousedown on the select sets the line ripple origin', () => {
+  const {bottomLine, fixture} = setupTest();
+  const event = document.createEvent('MouseEvent');
+  const clientX = 200;
+  const clientY = 200;
+  // IE11 mousedown event.
+  event.initMouseEvent('mousedown', true, true, window, 0, 0, 0, clientX, clientY, false, false, false, false, 0, null);
+  fixture.querySelector('select').dispatchEvent(event);
+
+  td.verify(bottomLine.setRippleCenter(200), {times: 1});
+});
+
+test('mousedown on the select does nothing if the it does not have a lineRipple', () => {
+  const hasOutline = true;
+  const {bottomLine, fixture} = setupTest(hasOutline);
+  const event = document.createEvent('MouseEvent');
+  const clientX = 200;
+  const clientY = 200;
+  // IE11 mousedown event.
+  event.initMouseEvent('mousedown', true, true, window, 0, 0, 0, clientX, clientY, false, false, false, false, 0, null);
+  fixture.querySelector('select').dispatchEvent(event);
+
+  td.verify(bottomLine.setRippleCenter(200), {times: 0});
+});
+
+test('#destroy removes the mousedown listener', () => {
+  const {bottomLine, component, fixture} = setupTest();
+  const event = document.createEvent('MouseEvent');
+  const clientX = 200;
+  const clientY = 200;
+
+  component.destroy();
+  // IE11 mousedown event.
+  event.initMouseEvent('mousedown', true, true, window, 0, 0, 0, clientX, clientY, false, false, false, false, 0, null);
+  fixture.querySelector('select').dispatchEvent(event);
+
+  td.verify(bottomLine.setRippleCenter(200), {times: 0});
+});
+
+test('keydown is not added to the native select when initialized', () => {
   const {component, fixture} = setupTest();
-  const handler = td.func('fixture focus handler');
-  fixture.addEventListener('focus', handler);
+  component.foundation_.handleKeydown = td.func();
   document.body.appendChild(fixture);
-
-  component.getDefaultFoundation().adapter_.focus();
-  assert.equal(document.activeElement, fixture);
-
+  domEvents.emit(fixture.querySelector('.mdc-select__native-control'), 'keydown');
+  td.verify(component.foundation_.handleKeydown(td.matchers.anything()), {times: 0});
   document.body.removeChild(fixture);
 });
 
-test('adapter#makeTabbable sets the root element\'s tabindex to 0', () => {
-  const {component, fixture} = setupTest();
-  fixture.tabIndex = -1;
-  component.getDefaultFoundation().adapter_.makeTabbable();
-  assert.equal(fixture.tabIndex, 0);
+test('#constructor instantiates a leading icon if an icon element is present', () => {
+  const root = getFixture();
+  const component = new MDCSelect(root);
+  assert.instanceOf(component.leadingIcon_, MDCSelectIcon);
 });
 
-test('adapter#makeUntabbable sets the root element\'s tabindex to -1', () => {
-  const {component, fixture} = setupTest();
-  fixture.tabIndex = 0;
-  component.getDefaultFoundation().adapter_.makeUntabbable();
-  assert.equal(fixture.tabIndex, -1);
+test('#constructor instantiates the helper text if present', () => {
+  const hasLabel = true;
+  const hasOutline = false;
+  const hasHelperText = true;
+  const {container, component} = setupTest(hasLabel, hasOutline, hasHelperText);
+
+  assert.instanceOf(component.helperText_, FakeHelperText);
+  document.body.removeChild(container);
 });
 
-test('adapter#getComputedStyleValue gets the computed style value of the prop from the root element', () => {
-  const {component, fixture} = setupTest();
-  document.body.appendChild(fixture);
-  fixture.style.width = '500px';
-  assert.equal(
-    component.getDefaultFoundation().adapter_.getComputedStyleValue('width'),
-    getComputedStyle(fixture).getPropertyValue('width')
-  );
-  document.body.removeChild(fixture);
+test('#constructor instantiates the helper text and passes the helper text foundation to MDCSelectFoundation', () => {
+  const root = getFixture();
+  const container = getHelperTextFixture(root);
+  document.body.appendChild(container);
+  const component = new MDCSelect(root);
+  assert.instanceOf(component.getDefaultFoundation().helperText_, MDCSelectHelperTextFoundation);
+  document.body.removeChild(container);
 });
 
-test('adapter#setStyle sets the given style propertyName to the given value', () => {
-  const {component, fixture} = setupTest();
-  component.getDefaultFoundation().adapter_.setStyle('font-size', '13px');
-  assert.equal(fixture.style.getPropertyValue('font-size'), '13px');
+test('#constructor does not instantiate the helper text if the aria-controls id does not match an element', () => {
+  const containerDiv = getHelperTextFixture();
+  containerDiv.querySelector('.mdc-select-helper-text').id = 'hello-world';
+  document.body.appendChild(containerDiv);
+
+  const component = new MDCSelect(containerDiv.querySelector('.mdc-select'));
+
+  assert.isUndefined(component.helperText_);
+  document.body.removeChild(containerDiv);
 });
 
-test('adapter#create2dRenderingContext returns a CanvasRenderingContext2d instance', () => {
-  const {component} = setupTest();
-  const fakeCtx = {};
-  const fakeCanvas = {
-    getContext: td.func('canvas.getContext'),
-  };
-  const origCreateElement = document.createElement;
-  document.createElement = td.func('document.createElement');
+test('#destroy destroys the helper text if it exists', () => {
+  const hasLabel = true;
+  const hasOutline = false;
+  const hasHelperText = true;
+  const {container, helperText, component} = setupTest(hasLabel, hasOutline, hasHelperText);
 
-  td.when(fakeCanvas.getContext('2d')).thenReturn(fakeCtx);
-  td.when(document.createElement('canvas')).thenReturn(fakeCanvas);
-
-  const ctx = component.getDefaultFoundation().adapter_.create2dRenderingContext();
-  assert.equal(ctx, fakeCtx);
-
-  document.createElement = origCreateElement;
+  component.destroy();
+  td.verify(helperText.destroy(), {times: 1});
+  document.body.removeChild(container);
 });
 
-test('adapter#setMenuElStyle sets a style property on the menu element', () => {
-  const {component, menuEl} = setupTest();
-  component.getDefaultFoundation().adapter_.setMenuElStyle('font-size', '10px');
-  assert.equal(menuEl.style.fontSize, '10px');
+/* eslint-disable mocha/no-skipped-tests, max-len */
+// These are currently skipped due to rAF being improperly cleaned up somewhere in our tests
+test.skip(`MutationObserver adds ${cssClasses.REQUIRED} class to the parent when required attribute is added`, (done) => {
+  const hasLabel = true;
+  const hasOutline = false;
+  const hasHelperText = false;
+  const {fixture, nativeControl} = setupTest(hasLabel, hasOutline, hasHelperText);
+  assert.isFalse(fixture.classList.contains(cssClasses.REQUIRED));
+
+  nativeControl.setAttribute('required', 'true');
+
+  // MutationObservers are queued as microtasks and fire asynchronously
+  setTimeout(() => {
+    assert.isTrue(fixture.classList.contains(cssClasses.REQUIRED));
+    done();
+  }, 0);
 });
 
-test('adapter#setMenuElAttr sets an attribute on the menu element', () => {
-  const {component, menuEl} = setupTest();
-  component.getDefaultFoundation().adapter_.setMenuElAttr('aria-hidden', 'true');
-  assert.equal(menuEl.getAttribute('aria-hidden'), 'true');
-});
+test.skip(`MutationObserver removes ${cssClasses.REQUIRED} class from the parent when required attribute is removed`, (done) => {
+  const hasLabel = true;
+  const hasOutline = false;
+  const hasHelperText = false;
+  const {fixture, nativeControl} = setupTest(hasLabel, hasOutline, hasHelperText);
 
-test('adapter#rmMenuElAttr removes an attribute from the menu element', () => {
-  const {component, menuEl} = setupTest();
-  menuEl.setAttribute('aria-hidden', 'true');
-  component.getDefaultFoundation().adapter_.rmMenuElAttr('aria-hidden');
-  assert.isNotOk(menuEl.hasAttribute('aria-hidden'));
-});
+  nativeControl.setAttribute('required', 'true');
+  setTimeout(() => {
+    assert.isTrue(fixture.classList.contains(cssClasses.REQUIRED));
 
-test('adapter#getMenuElOffsetHeight returns the menu element\'s offsetHeight', () => {
-  const {component, menuEl} = setupTest();
-  assert.equal(component.getDefaultFoundation().adapter_.getMenuElOffsetHeight(), menuEl.offsetHeight);
+    fixture.querySelector(strings.NATIVE_CONTROL_SELECTOR).removeAttribute('required');
+    setTimeout(() => {
+      assert.isFalse(fixture.classList.contains(cssClasses.REQUIRED));
+      done();
+    }, 0);
+  }, 0);
 });
-
-test('adapter#openMenu shows the menu with the given focusIndex', () => {
-  const {component, menu} = setupTest();
-  component.getDefaultFoundation().adapter_.openMenu(1);
-  td.verify(menu.show({focusIndex: 1}));
-});
-
-test('adapter#isMenuOpen returns whether or not the menu is open', () => {
-  const {component, menu} = setupTest();
-  const {adapter_: adapter} = component.getDefaultFoundation();
-  menu.open = true;
-  assert.isOk(adapter.isMenuOpen());
-  menu.open = false;
-  assert.isNotOk(adapter.isMenuOpen());
-});
-
-test('adapter#setSelectedTextContent sets the textContent of the selected text el', () => {
-  const {component, fixture} = setupTest();
-  component.getDefaultFoundation().adapter_.setSelectedTextContent('content');
-  assert.equal(fixture.querySelector('.mdc-select__selected-text').textContent, 'content');
-});
-
-test('adapter#getNumberOfOptions returns the length of the component\'s options property', () => {
-  const {component} = setupTest();
-  assert.equal(component.getDefaultFoundation().adapter_.getNumberOfOptions(), component.options.length);
-});
-
-test('adapter#getTextForOptionAtIndex gets the text content for the option at the given index', () => {
-  const {component} = setupTest();
-  assert.equal(
-    component.getDefaultFoundation().adapter_.getTextForOptionAtIndex(1),
-    component.options[1].textContent
-  );
-});
-
-test('adapter#setAttrForOptionAtIndex sets an attribute to the given value for the option at the ' +
-     'given index', () => {
-  const {component} = setupTest();
-  component.getDefaultFoundation().adapter_.setAttrForOptionAtIndex(1, 'aria-disabled', 'true');
-  assert.equal(component.options[1].getAttribute('aria-disabled'), 'true');
-});
-
-test('adapter#rmAttrForOptionAtIndex removes the given attribute for the option at the given index', () => {
-  const {component} = setupTest();
-  component.options[1].setAttribute('aria-disabled', 'true');
-  component.getDefaultFoundation().adapter_.rmAttrForOptionAtIndex(1, 'aria-disabled');
-  assert.isNotOk(component.options[1].hasAttribute('aria-disabled'));
-});
-
-test('adapter#getOffsetTopForOptionAtIndex returns the offsetTop for the option at the given index', () => {
-  const {component, menu} = setupTest();
-  assert.equal(
-    component.getDefaultFoundation().adapter_.getOffsetTopForOptionAtIndex(1),
-    menu.items[1].offsetTop
-  );
-});
-
-test('adapter#registerMenuInteractionHandler listens for an interaction handler on the menu', () => {
-  const {component, menu} = setupTest();
-  const handler = () => {};
-  component.getDefaultFoundation().adapter_.registerMenuInteractionHandler('evt', handler);
-  td.verify(menu.listen('evt', handler));
-});
-
-test('adapter#deregisterMenuInteractionHandler unlistens for an interaction handler on the menu', () => {
-  const {component, menu} = setupTest();
-  const handler = () => {};
-  component.getDefaultFoundation().adapter_.deregisterMenuInteractionHandler('evt', handler);
-  td.verify(menu.unlisten('evt', handler));
-});
-
-test(`adapter#notifyChange emits an ${strings.CHANGE_EVENT} custom event from the root element`, () => {
-  const {component, fixture} = setupTest();
-  const handler = td.func('change handler');
-  fixture.addEventListener(strings.CHANGE_EVENT, handler);
-  component.getDefaultFoundation().adapter_.notifyChange();
-});
-
-test('adapter#getWindowInnerHeight returns window.innerHeight', () => {
-  const {component} = setupTest();
-  assert.equal(component.getDefaultFoundation().adapter_.getWindowInnerHeight(), window.innerHeight);
-});
-
-test('adapter#getValueForOptionAtIndex returns the id of the option at the given index', () => {
-  const {component} = setupTest();
-  assert.equal(component.getDefaultFoundation().adapter_.getValueForOptionAtIndex(1), 'item-2');
-});
-
-test('adapter#getValueForOptionAtIndex returns the textContent of the option at given index when ' +
-     'no id value present', () => {
-  const {component} = setupTest();
-  assert.equal(component.getDefaultFoundation().adapter_.getValueForOptionAtIndex(3), 'Item 4 no id');
-});
+/* eslint-enable mocha/no-skipped-tests, max-len */

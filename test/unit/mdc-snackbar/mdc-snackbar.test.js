@@ -1,17 +1,24 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 import {assert} from 'chai';
@@ -19,7 +26,7 @@ import bel from 'bel';
 import td from 'testdouble';
 import domEvents from 'dom-events';
 
-import {MDCSnackbar, MDCSnackbarFoundation} from '../../../packages/mdc-snackbar';
+import {MDCSnackbar, MDCSnackbarFoundation} from '../../../packages/mdc-snackbar/index';
 
 const {strings} = MDCSnackbarFoundation;
 
@@ -36,8 +43,9 @@ function getFixture() {
 
 function setupTest() {
   const root = getFixture();
+  const actionButton = root.querySelector(strings.ACTION_BUTTON_SELECTOR);
   const component = new MDCSnackbar(root);
-  return {root, component};
+  return {root, actionButton, component};
 }
 
 suite('MDCSnackbar');
@@ -51,6 +59,22 @@ test('show() delegates to the foundation', () => {
   component.foundation_.show = td.function();
   component.show('data');
   td.verify(component.foundation_.show('data'));
+});
+
+test(`adapter#notifyShow fires an ${strings.SHOW_EVENT} custom event`, () => {
+  const {root, component} = setupTest();
+  const handler = td.func('notifyShow handler');
+  root.addEventListener(strings.SHOW_EVENT, handler);
+  component.getDefaultFoundation().adapter_.notifyShow();
+  td.verify(handler(td.matchers.anything()));
+});
+
+test(`adapter#notifyHide fires an ${strings.HIDE_EVENT} custom event`, () => {
+  const {root, component} = setupTest();
+  const handler = td.func('notifyHide handler');
+  root.addEventListener(strings.HIDE_EVENT, handler);
+  component.getDefaultFoundation().adapter_.notifyHide();
+  td.verify(handler(td.matchers.anything()));
 });
 
 test('show() and click', () => {
@@ -117,6 +141,100 @@ test('foundationAdapter#unsetActionAriaHidden removes "aria-hidden" from the act
   assert.isNotOk(actionButton.getAttribute('aria-hidden'));
 });
 
+test('adapter#setFocus sets focus on the action button', () => {
+  const {root, actionButton, component} = setupTest();
+  const handler = td.func('fixture focus handler');
+  root.addEventListener('focus', handler);
+  document.body.appendChild(root);
+
+  component.getDefaultFoundation().adapter_.setFocus();
+
+  assert.equal(document.activeElement, actionButton);
+  document.body.removeChild(root);
+});
+
+test('adapter#isFocused detects focus on the action button', () => {
+  const {root, component} = setupTest();
+  const handler = td.func('fixture focus handler');
+  root.addEventListener('focus', handler);
+  document.body.appendChild(root);
+
+  component.getDefaultFoundation().adapter_.setFocus();
+
+  assert.isOk(component.getDefaultFoundation().adapter_.isFocused());
+  document.body.removeChild(root);
+});
+
+test('adapter#visibilityIsHidden returns the document.hidden property', () => {
+  const {component} = setupTest();
+  assert.equal(component.getDefaultFoundation().adapter_.visibilityIsHidden(), document.hidden);
+});
+
+test('adapter#registerCapturedBlurHandler adds a handler to be called on a blur event', () => {
+  const {actionButton, component} = setupTest();
+  const handler = td.func('blurHandler');
+
+  component.getDefaultFoundation().adapter_.registerCapturedBlurHandler(handler);
+  domEvents.emit(actionButton, 'blur');
+
+  td.verify(handler(td.matchers.anything()));
+});
+
+test('adapter#deregisterCapturedBlurHandler removes a handler to be called on a blur event', () => {
+  const {actionButton, component} = setupTest();
+  const handler = td.func('blurHandler');
+
+  actionButton.addEventListener('blur', handler, true);
+  component.getDefaultFoundation().adapter_.deregisterCapturedBlurHandler(handler);
+  domEvents.emit(actionButton, 'blur');
+
+  td.verify(handler(td.matchers.anything()), {times: 0});
+});
+
+test('adapter#registerVisibilityChangeHandler adds a handler to be called on a visibilitychange event', () => {
+  const {component} = setupTest();
+  const handler = td.func('visibilitychangeHandler');
+
+  component.getDefaultFoundation().adapter_.registerVisibilityChangeHandler(handler);
+  domEvents.emit(document, 'visibilitychange');
+
+  td.verify(handler(td.matchers.anything()));
+});
+
+test('adapter#deregisterVisibilityChangeHandler removes a handler to be called on a visibilitychange event', () => {
+  const {component} = setupTest();
+  const handler = td.func('visibilitychangeHandler');
+
+  document.addEventListener('visibilitychange', handler);
+  component.getDefaultFoundation().adapter_.deregisterVisibilityChangeHandler(handler);
+  domEvents.emit(document, 'visibilitychange');
+
+  td.verify(handler(td.matchers.anything()), {times: 0});
+});
+
+test('adapter#registerCapturedInteractionHandler adds a handler to be called when a given event occurs', () => {
+  const {component} = setupTest();
+  const handler = td.func('interactionHandler');
+  const mockEvent = 'click';
+
+  component.getDefaultFoundation().adapter_.registerCapturedInteractionHandler(mockEvent, handler);
+  domEvents.emit(document.body, mockEvent);
+
+  td.verify(handler(td.matchers.anything()));
+});
+
+test('adapter#deregisterCapturedInteractionHandler removes a handler to be called when a given event occurs', () => {
+  const {component} = setupTest();
+  const handler = td.func('interactionHandler');
+  const mockEvent = 'click';
+
+  document.body.addEventListener(mockEvent, handler, true);
+  component.getDefaultFoundation().adapter_.deregisterCapturedInteractionHandler(mockEvent, handler);
+  domEvents.emit(document.body, mockEvent);
+
+  td.verify(handler(td.matchers.anything()), {times: 0});
+});
+
 test('foundationAdapter#registerActionClickHandler adds the handler to be called when action is clicked', () => {
   const {root, component} = setupTest();
   const handler = td.func('clickHandler');
@@ -160,4 +278,20 @@ test('foundationAdapter#deregisterTransitionEndHandler adds an event listener to
 
   domEvents.emit(root, 'transitionend');
   td.verify(handler(td.matchers.anything()), {times: 0});
+});
+
+test('#get dismissesOnAction property dispatches to foundation_', () => {
+  const {component} = setupTest();
+
+  assert.isTrue(component.dismissesOnAction);
+  component.foundation_.setDismissOnAction(false);
+  assert.isFalse(component.dismissesOnAction);
+});
+
+test('#set dismissesOnAction property dispatches to foundation_', () => {
+  const {component} = setupTest();
+
+  assert.isTrue(component.foundation_.dismissesOnAction());
+  component.dismissesOnAction = false;
+  assert.isFalse(component.foundation_.dismissesOnAction());
 });

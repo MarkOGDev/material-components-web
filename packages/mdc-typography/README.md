@@ -2,169 +2,159 @@
 title: "Typography"
 layout: detail
 section: components
-excerpt: "Material Design typography guidelines implemented via CSS."
+excerpt: "Typographic scale that handles a set of type sizes"
 iconId: typography
 path: /catalog/typography/
 -->
 
 # Typography
 
-MDC typography is a CSS-only component that implements the
-[Material Design typography guidelines](https://material.io/guidelines/style/typography.html), and makes them available to
-developers as CSS classes.
+Material Design's text sizes and styles were developed to balance content density and reading comfort under typical usage conditions.
+
+MDC Typography is a foundational module that applies these styles to MDC Web components. The typographic styles in this module are derived from thirteen styles:
+
+* Headline 1
+* Headline 2
+* Headline 3
+* Headline 4
+* Headline 5
+* Headline 6
+* Subtitle 1
+* Subtitle 2
+* Body 1
+* Body 2
+* Caption
+* Button
+* Overline
 
 ## Design & API Documentation
 
 <ul class="icon-list">
   <li class="icon-list-item icon-list-item--spec">
-    <a href="https://material.io/guidelines/style/typography.html">Material Design guidelines: Typography</a>
+    <a href="https://material.io/go/design-typography">Material Design guidelines: Typography</a>
   </li>
   <li class="icon-list-item icon-list-item--link">
-    <a href="https://material-components-web.appspot.com/typography.html">Demo</a>
+    <a href="https://material-components.github.io/material-components-web-catalog/#/component/typography">Demo</a>
   </li>
 </ul>
 
 ## Installation
 
-> Note: Installation via the npm registry will be available after alpha.
+```
+npm install @material/typography
+```
 
+## Basic Usage
 
-## CSS class usage
+### HTML Structure
+
+We recommend using Roboto from Google Fonts:
 
 ```html
 <head>
   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
 </head>
 <body class="mdc-typography">
-  <h1 class="mdc-typography--display4">Big header</h1>
+  <h1 class="mdc-typography--headline1">Big header</h1>
 </body>
 ```
 
-Material Design typography uses the Roboto font, which we're loading from Google Fonts in the example above.
+### Styles
 
-> Note: You can load more font weights and styles if you wish, but `mdc-typography` only uses 300, 400 and 500.
-
-The `mdc-typography` class defines basic properties for text, such as the typeface and antialiasing settings.
-
-### Formatting your text
-
-#### Style
-
-Simply add the corresponding style class to format your text:
-
-```html
-<body class="mdc-typography">
-  <h1 class="mdc-typography--display4">Big header</h1>
-
-  <p class="mdc-typography--body1">
-    A paragraph with <span class="mdc-typography--body2">emphasis</span>.
-  </p>
-</body>
+```css
+@import "@material/typography/mdc-typography";
 ```
 
-The full list of styles:
+## Style Customization
 
-- `mdc-typography--display4`
-- `mdc-typography--display3`
-- `mdc-typography--display2`
-- `mdc-typography--display1`
-- `mdc-typography--headline`
-- `mdc-typography--title`
-- `mdc-typography--subheading2`
-- `mdc-typography--subheading1`
-- `mdc-typography--body2`
-- `mdc-typography--body1`
-- `mdc-typography--caption`
+### CSS Classes
 
-#### Margins and positioning
+Some components have a set typographic style. For example, a raised MDC Card uses Body 1, Body 2, and Headline styles.
 
-In order to minimize unexpected behavior, the style classes only specify font properties, such as size, weight and line
-height.
+If you want to set the typographic style of an element, which is not a Material Design component, you can apply the following CSS classes.
 
-This means that while text will be correctly styled, it may not be correctly positioned. If you include the
-`mdc-typography--adjust-margin` class, though, positioning will be adjusted according to the style:
+CSS Class | Description
+--- | ---
+`mdc-typography` | Sets the font to Roboto
+`mdc-typography--headline1` | Sets font properties as Headline 1
+`mdc-typography--headline2` | Sets font properties as Headline 2
+`mdc-typography--headline3` | Sets font properties as Headline 3
+`mdc-typography--headline4` | Sets font properties as Headline 4
+`mdc-typography--headline5` | Sets font properties as Headline 5
+`mdc-typography--headline6` | Sets font properties as Headline 6
+`mdc-typography--subtitle1` | Sets font properties as Subtitle 1
+`mdc-typography--subtitle2` | Sets font properties as Subtitle 2
+`mdc-typography--body1` | Sets font properties as Body 1
+`mdc-typography--body2` | Sets font properties as Body 2
+`mdc-typography--caption` | Sets font properties as Caption
+`mdc-typography--button` | Sets font properties as Button
+`mdc-typography--overline` | Sets font properties as Overline
 
-```html
-<body class="mdc-typography">
-  <h1 class="mdc-typography--display4 mdc-typography--adjust-margin">
-    Big header
-  </h1>
+### Sass Variables and Mixins
 
-  <p class="mdc-typography--body1 mdc-typography--adjust-margin">
-    A paragraph with
-    <span class="mdc-typography--body2 mdc-typography--adjust-margin">
-      emphasis
-    </span>.
-  </p>
-</body>
-```
+Mixin | Description
+--- | ---
+`mdc-typography-base` | Sets the font to Roboto
+`mdc-typography($style)` | Applies one of the typography styles, including setting the font to Roboto
+`mdc-typography-overflow-ellipsis` | Truncates overflow text to one line with an ellipsis
+`mdc-typography-baseline-top($distance)` | Sets the baseline height of a text element from top.
+`mdc-typography-baseline-bottom($distance)` | Sets the distance from text baseline to bottom. This mixin should be combined with `mdc-typography-baseline-top` when setting baseline distance to following text element.
 
-> Note: as the name implies, `mdc-typography--adjust-margin` will change the margin properties of the element it's
-applied to, in order to align text correctly. Because of this, it should only be used in a text context; using this
-property on UI elements such as buttons may cause them to be positioned incorrectly.
+> **A note about `mdc-typography-overflow-ellipsis`**, `mdc-typography-overflow-ellipsis` should only be used if the element is `display: block` or `display: inline-block`.
 
+#### `$style` Values
 
-## Sass mixin usage
+These styles can be used as the `$style` argument for the `mdc-typography` mixin.
 
-### mdc-typography-base
+* `headline1`
+* `headline2`
+* `headline3`
+* `headline4`
+* `headline5`
+* `headline6`
+* `subtitle1`
+* `subtitle2`
+* `body1`
+* `body2`
+* `caption`
+* `button`
+* `overline`
+
+#### Overriding Styles
+
+All styles can be overridden using Sass global variables _before_ the component is imported by setting a global 
+variable named `$mdc-typography-styles-{style}`. The variable should be assigned a map that contains all the properties
+you want to override for a particular style.
+
+Example: Overriding the button `font-size` and `text-transform` properties.
 
 ```scss
-@include mdc-typography-base;
+$mdc-typography-styles-button: (
+  font-size: 16px,
+  text-transform: none,
+);
+
+@import "@material/button/mdc-button";
 ```
 
-`mdc-typography-base` defines the basic properties for Material Design typography, namely the font and aliasing
-settings, without defining any particular font size or style.
-
-
-### mdc-typography
-
+Example: Overriding the global `font-family` property. 
 ```scss
-@include mdc-typography(display4);
+$mdc-typography-font-family: "Arial, Helvetica, sans-serif";
+
+...
+@import ...
 ```
 
-Applies one of the typography styles. Note that this includes the font family and aliasing definitions; you don't need
-to include `mdc-typography-base` as well.
-
-The full list of styles:
-- `display4`
-- `display3`
-- `display2`
-- `display1`
-- `headline`
-- `title`
-- `subheading2`
-- `subheading1`
-- `body2`
-- `body1`
-- `caption`
-
-
-### mdc-typography-adjust-margin
-
+Example: Overriding the `font-family` property for `headline1` and `font-family` and `font-size` for `headline2`.
 ```scss
-@include mdc-typography(display4);
-@include mdc-typography-adjust-margin(display4);
+$mdc-typography-styles-headline1: (
+  font-family: unquote("Arial, Helvetica, sans-serif")
+);
+$mdc-typography-styles-headline2: (
+  font-family: unquote("Arial, Helvetica, sans-serif"),
+  font-size: 3.25rem
+);
+
+...
+@import ...
 ```
-
-In order to minimize unexpected behavior, the style mixins only specify font properties, such as size, weight and line
-height.
-
-This means that while text will be correctly styled, it may not be correctly positioned. If you include the
-`mdc-typography-adjust-margin` mixin as well, though, positioning will be adjusted according to the style.
-
-> Note: as the name implies, `mdc-typography-adjust-margin` will change the margin properties of the element it's
-applied to, in order to align text correctly. Because of this, it should only be used in a text context; using this
-property on UI elements such as buttons may cause them to be positioned incorrectly.
-
-The list of styles is the same as for the `mdc-typography` mixin:
-- `display4`
-- `display3`
-- `display2`
-- `display1`
-- `headline`
-- `title`
-- `subheading2`
-- `subheading1`
-- `body2`
-- `body1`
-- `caption`

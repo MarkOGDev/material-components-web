@@ -1,251 +1,418 @@
 /**
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * @license
+ * Copyright 2016 Google Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 import {assert} from 'chai';
 import td from 'testdouble';
 
-import {setupFoundationTest} from '../helpers/setup';
-import {captureHandlers, verifyDefaultAdapter} from '../helpers/foundation';
+import {verifyDefaultAdapter} from '../helpers/foundation';
 
 import MDCSelectFoundation from '../../../packages/mdc-select/foundation';
+import {cssClasses, strings, numbers} from '../../../packages/mdc-select/constants';
 
 suite('MDCSelectFoundation');
 
 test('exports cssClasses', () => {
-  assert.isOk('cssClasses' in MDCSelectFoundation);
+  assert.deepEqual(MDCSelectFoundation.cssClasses, cssClasses);
+});
+
+test('exports numbers', () => {
+  assert.deepEqual(MDCSelectFoundation.numbers, numbers);
+});
+
+test('exports strings', () => {
+  assert.deepEqual(MDCSelectFoundation.strings, strings);
 });
 
 test('default adapter returns a complete adapter implementation', () => {
   verifyDefaultAdapter(MDCSelectFoundation, [
-    'addClass', 'removeClass', 'setAttr', 'rmAttr', 'computeBoundingRect',
-    'registerInteractionHandler', 'deregisterInteractionHandler', 'focus', 'makeTabbable',
-    'makeUntabbable', 'getComputedStyleValue', 'setStyle', 'create2dRenderingContext',
-    'setMenuElStyle', 'setMenuElAttr', 'rmMenuElAttr', 'getMenuElOffsetHeight', 'openMenu',
-    'isMenuOpen', 'setSelectedTextContent', 'getNumberOfOptions', 'getTextForOptionAtIndex',
-    'setAttrForOptionAtIndex', 'rmAttrForOptionAtIndex', 'getOffsetTopForOptionAtIndex',
-    'registerMenuInteractionHandler', 'deregisterMenuInteractionHandler', 'notifyChange',
-    'getWindowInnerHeight', 'getValueForOptionAtIndex',
+    'addClass', 'removeClass', 'hasClass', 'floatLabel', 'activateBottomLine', 'deactivateBottomLine', 'getValue',
+    'isRtl', 'getLabelWidth', 'hasOutline', 'notchOutline', 'closeOutline', 'isMenuOpen', 'openMenu',
+    'closeMenu', 'setDisabled', 'setSelectedIndex', 'setValue', 'setRippleCenter', 'notifyChange',
+    'checkValidity', 'setValid',
   ]);
-
-  const renderingContext = MDCSelectFoundation.defaultAdapter.create2dRenderingContext();
-  const renderingContextMethods =
-    Object.keys(renderingContext).filter((k) => typeof renderingContext[k] === 'function');
-  assert.deepEqual(renderingContextMethods.slice().sort(), ['measureText'].slice().sort());
-  renderingContextMethods.forEach((m) => assert.doesNotThrow(renderingContext[m]));
 });
 
-function setupTest() {
-  return setupFoundationTest(MDCSelectFoundation);
+function setupTest(hasLeadingIcon = true, hasHelperText = false) {
+  const mockAdapter = td.object(MDCSelectFoundation.defaultAdapter);
+  const leadingIcon = td.object({
+    setDisabled: () => {},
+    setAriaLabel: () => {},
+    setContent: () => {},
+    registerInteractionHandler: () => {},
+    deregisterInteractionHandler: () => {},
+    handleInteraction: () => {},
+  });
+  const helperText = td.object({
+    setContent: () => {},
+    setPersistent: () => {},
+    setValidation: () => {},
+    showToScreenReader: () => {},
+    setValidity: () => {},
+  });
+  const foundationMap = {
+    leadingIcon: hasLeadingIcon ? leadingIcon : undefined,
+    helperText: hasHelperText ? helperText : undefined,
+  };
+
+  td.when(mockAdapter.getValue()).thenReturn('');
+
+  const foundation = new MDCSelectFoundation(mockAdapter, foundationMap);
+  return {foundation, mockAdapter, leadingIcon, helperText};
 }
 
-test('#getSelectedIndex returns -1 if never set', () => {
-  const {foundation} = setupTest();
-  assert.equal(foundation.getSelectedIndex(), -1);
-});
-
-test('#setSelectedIndex updates the selected index', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(2);
-  td.when(mockAdapter.getTextForOptionAtIndex(1)).thenReturn('');
-  foundation.setSelectedIndex(1);
-  assert.equal(foundation.getSelectedIndex(), 1);
-});
-
-test('#setSelectedIndex sets the trimmed text content of the selected item as selected text content', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(2);
-  td.when(mockAdapter.getTextForOptionAtIndex(1)).thenReturn('   \nselected text ');
-  foundation.setSelectedIndex(1);
-  td.verify(mockAdapter.setSelectedTextContent('selected text'));
-});
-
-test('#setSelectedIndex sets aria-selected to "true" on the selected item', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(2);
-  td.when(mockAdapter.getTextForOptionAtIndex(1)).thenReturn('');
-  foundation.setSelectedIndex(1);
-  td.verify(mockAdapter.setAttrForOptionAtIndex(1, 'aria-selected', 'true'));
-});
-
-test('#setSelectedIndex removes aria-selected from the previously selected item, if any', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(2);
-  td.when(mockAdapter.getTextForOptionAtIndex(0)).thenReturn('');
-  td.when(mockAdapter.getTextForOptionAtIndex(1)).thenReturn('');
-  foundation.setSelectedIndex(0);
-  foundation.setSelectedIndex(1);
-  td.verify(mockAdapter.rmAttrForOptionAtIndex(0, 'aria-selected'));
-});
-
-test('#setSelectedIndex clears the select if given index is < 0', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(2);
-  foundation.setSelectedIndex(-15);
-  td.verify(mockAdapter.setSelectedTextContent(''));
-  assert.equal(foundation.getSelectedIndex(), -1);
-});
-
-test('#setSelectedIndex clears the select if given index is >= the number of options', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(2);
-  foundation.setSelectedIndex(2);
-  td.verify(mockAdapter.setSelectedTextContent(''));
-  assert.equal(foundation.getSelectedIndex(), -1);
-});
-
-test('#isDisabled returns false by default', () => {
-  const {foundation} = setupTest();
-  assert.isNotOk(foundation.isDisabled());
-});
-
-test('#setDisabled sets disabled to true when true', () => {
-  const {foundation} = setupTest();
+test('#setDisabled(true) calls adapter.addClass', () => {
+  const {mockAdapter, foundation} = setupTest();
   foundation.setDisabled(true);
-  assert.isOk(foundation.isDisabled());
+  td.verify(mockAdapter.setDisabled(true));
+  td.verify(mockAdapter.addClass(cssClasses.DISABLED));
 });
 
-test('#setDisabled adds the disabled class when true', () => {
-  const {foundation, mockAdapter} = setupTest();
+test('#setDisabled(false) calls adapter.removeClass', () => {
+  const {mockAdapter, foundation} = setupTest();
+  foundation.setDisabled(false);
+  td.verify(mockAdapter.setDisabled(false));
+  td.verify(mockAdapter.removeClass(cssClasses.DISABLED));
+});
+
+test('#setDisabled sets disabled on leading icon', () => {
+  const {foundation, leadingIcon} = setupTest();
   foundation.setDisabled(true);
-  td.verify(mockAdapter.addClass(MDCSelectFoundation.cssClasses.DISABLED));
+  td.verify(leadingIcon.setDisabled(true));
 });
 
-test('#setDisabled adds aria-disabled="true" when true', () => {
+test('#notchOutline updates the SVG path of the outline element', () => {
   const {foundation, mockAdapter} = setupTest();
-  foundation.setDisabled(true);
-  td.verify(mockAdapter.setAttr('aria-disabled', 'true'));
+  td.when(mockAdapter.getLabelWidth()).thenReturn(30);
+  td.when(mockAdapter.hasOutline()).thenReturn(true);
+  td.when(mockAdapter.isRtl()).thenReturn(false);
+
+  foundation.notchOutline(true);
+  td.verify(mockAdapter.notchOutline(30 * numbers.LABEL_SCALE, false));
 });
 
-test('#setDisabled makes the select unfocusable when true', () => {
+test('#notchOutline does nothing if no outline is present', () => {
   const {foundation, mockAdapter} = setupTest();
-  foundation.setDisabled(true);
-  td.verify(mockAdapter.makeUntabbable());
+  td.when(mockAdapter.hasOutline()).thenReturn(false);
+
+  foundation.notchOutline(true);
+  td.verify(mockAdapter.notchOutline(td.matchers.anything()), {times: 0});
 });
 
-test('#setDisabled sets disabled to false when false', () => {
+test('#notchOutline does nothing if no label is present', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.hasOutline()).thenReturn(true);
+
+  foundation.notchOutline(true);
+  td.verify(mockAdapter.notchOutline(td.matchers.anything()), {times: 0});
+});
+
+test('#notchOutline calls updates notched outline to return to idle state when ' +
+  'openNotch is false and not focused', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.hasOutline()).thenReturn(true);
+
+  foundation.notchOutline(false);
+  td.verify(mockAdapter.closeOutline());
+});
+
+test('#notchOutline does not close the notch if the select is still focused', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.hasOutline()).thenReturn(true);
+  td.when(mockAdapter.hasClass(cssClasses.FOCUSED)).thenReturn(true);
+
+  foundation.notchOutline(false);
+  td.verify(mockAdapter.closeOutline(), {times: 0});
+});
+
+test('#handleChange calls adapter.floatLabel(true) when there is a value', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.getValue()).thenReturn('value');
+
+  foundation.handleChange();
+  td.verify(mockAdapter.floatLabel(true), {times: 1});
+});
+
+test('#handleChange calls adapter.floatLabel(false) when there is no value and the select is not focused', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.getValue()).thenReturn('');
+
+  foundation.handleChange();
+  td.verify(mockAdapter.floatLabel(false), {times: 1});
+});
+
+test('#handleChange does not call adapter.floatLabel(false) when there is no value if the select is focused', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.getValue()).thenReturn('');
+  td.when(mockAdapter.hasClass(cssClasses.FOCUSED)).thenReturn(true);
+
+  foundation.handleChange();
+  td.verify(mockAdapter.floatLabel(false), {times: 0});
+});
+
+test('#handleChange calls foundation.notchOutline(true) when there is a value', () => {
+  const {foundation, mockAdapter} = setupTest();
+  foundation.notchOutline = td.func();
+  td.when(mockAdapter.getValue()).thenReturn('value');
+
+  foundation.handleChange();
+  td.verify(foundation.notchOutline(true), {times: 1});
+});
+
+test('#handleChange calls foundation.notchOutline(false) when there is no value', () => {
+  const {foundation, mockAdapter} = setupTest();
+  foundation.notchOutline = td.func();
+  td.when(mockAdapter.getValue()).thenReturn('');
+
+  foundation.handleChange();
+  td.verify(foundation.notchOutline(false), {times: 1});
+});
+
+test('#handleChange calls adapter.notifyChange() if didChange is true', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.getValue()).thenReturn('value');
+
+  foundation.handleChange(/* didChange */ true);
+  td.verify(mockAdapter.notifyChange(td.matchers.anything()), {times: 1});
+});
+
+test('#handleFocus calls adapter.floatLabel(true)', () => {
+  const {foundation, mockAdapter} = setupTest();
+
+  foundation.handleFocus();
+  td.verify(mockAdapter.floatLabel(true), {times: 1});
+});
+
+test('#handleFocus calls foundation.notchOutline(true)', () => {
   const {foundation} = setupTest();
-  foundation.setDisabled(false);
-  assert.isNotOk(foundation.isDisabled());
+  foundation.notchOutline = td.func();
+  foundation.handleFocus();
+  td.verify(foundation.notchOutline(true), {times: 1});
 });
 
-test('#setDisabled removes the disabled class when false', () => {
+test('#handleFocus calls adapter.activateBottomLine()', () => {
   const {foundation, mockAdapter} = setupTest();
-  foundation.setDisabled(false);
-  td.verify(mockAdapter.removeClass(MDCSelectFoundation.cssClasses.DISABLED));
+  foundation.handleFocus();
+  td.verify(mockAdapter.activateBottomLine(), {times: 1});
 });
 
-test('#setDisabled removes the aria-disabled attr when false', () => {
+test('#handleFocus calls helperText.showToScreenReader', () => {
+  const hasIcon = true;
+  const hasHelperText = true;
+  const {foundation, helperText} = setupTest(hasIcon, hasHelperText);
+  foundation.handleFocus();
+  td.verify(helperText.showToScreenReader(), {times: 1});
+});
+
+test('#handleFocus calls adapter.activateBottomLine() if isMenuOpen=true', () => {
   const {foundation, mockAdapter} = setupTest();
-  foundation.setDisabled(false);
-  td.verify(mockAdapter.rmAttr('aria-disabled'));
+  td.when(mockAdapter.isMenuOpen()).thenReturn(true);
+  foundation.handleFocus();
+  td.verify(mockAdapter.activateBottomLine(), {times: 1});
 });
 
-test('#setDisabled makes the select focusable when false', () => {
-  const {foundation, mockAdapter} = setupTest();
-  foundation.setDisabled(false);
-  td.verify(mockAdapter.makeTabbable());
-});
-
-test('#resize resizes the element to the longest-length option', () => {
-  const {foundation, mockAdapter} = setupTest();
-  const ctx = td.object({
-    font: 'default font',
-    measureText: () => {},
-  });
-  td.when(mockAdapter.create2dRenderingContext()).thenReturn(ctx);
-  td.when(mockAdapter.getComputedStyleValue('font')).thenReturn('16px Roboto');
-  td.when(mockAdapter.getComputedStyleValue('letter-spacing')).thenReturn('2.5px');
-
-  // Add space on last option to test trimming
-  const opts = ['longer', 'longest', '     short     '];
-  const widths = [100, 200, 50];
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(opts.length);
-  opts.forEach((txt, i) => {
-    td.when(mockAdapter.getTextForOptionAtIndex(i)).thenReturn(txt);
-    td.when(ctx.measureText(txt.trim())).thenReturn({width: widths[i]});
-  });
-
-  foundation.init();
-  foundation.resize();
-  assert.equal(ctx.font, '16px Roboto');
-  // ceil(letter-spacing * 'longest'.length + longest measured width)
-  const expectedWidth = Math.ceil((2.5 * 7) + Math.max(...widths));
-  td.verify(mockAdapter.setStyle('width', `${expectedWidth}px`));
-});
-
-test('#resize falls back to font-{family,size} if shorthand is not supported', () => {
-  const {foundation, mockAdapter} = setupTest();
-  const ctx = td.object({
-    font: 'default font',
-    measureText: () => {},
-  });
-  td.when(mockAdapter.create2dRenderingContext()).thenReturn(ctx);
-  td.when(mockAdapter.getComputedStyleValue('font')).thenReturn(null);
-  td.when(mockAdapter.getComputedStyleValue('font-size')).thenReturn('16px');
-  td.when(mockAdapter.getComputedStyleValue('font-family')).thenReturn('Roboto,sans-serif');
-  td.when(mockAdapter.getComputedStyleValue('letter-spacing')).thenReturn('2.5px');
-
-  // Add space on last option to test trimming
-  const opts = ['longer', 'longest', '     short     '];
-  const widths = [100, 200, 50];
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(opts.length);
-  opts.forEach((txt, i) => {
-    td.when(mockAdapter.getTextForOptionAtIndex(i)).thenReturn(txt);
-    td.when(ctx.measureText(txt.trim())).thenReturn({width: widths[i]});
-  });
-
-  foundation.init();
-  foundation.resize();
-  assert.equal(ctx.font, '16px Roboto');
-  // ceil(letter-spacing * 'longest'.length + longest measured width)
-  const expectedWidth = Math.ceil((2.5 * 7) + Math.max(...widths));
-  td.verify(mockAdapter.setStyle('width', `${expectedWidth}px`));
-});
-
-test('#destroy deregisters all events registered within init()', () => {
-  const {foundation, mockAdapter} = setupTest();
-  td.when(mockAdapter.create2dRenderingContext()).thenReturn({});
-  td.when(mockAdapter.getComputedStyleValue('font')).thenReturn('16px Times');
-  const handlers = captureHandlers(mockAdapter, 'registerInteractionHandler');
-  const menuHandlers = captureHandlers(mockAdapter, 'registerMenuInteractionHandler');
-  foundation.init();
-  foundation.destroy();
-  Object.keys(handlers).forEach((type) => {
-    td.verify(mockAdapter.deregisterInteractionHandler(type, td.matchers.isA(Function)));
-  });
-  Object.keys(menuHandlers).forEach((type) => {
-    td.verify(
-      mockAdapter.deregisterMenuInteractionHandler(type, td.matchers.isA(Function))
-    );
-  });
-});
-
-test('#getValue() returns the value of the option at the selected index', () => {
-  const {foundation, mockAdapter} = setupTest();
-  const opts = ['a', 'SELECTED', 'b'];
-  const selectedIndex = 1;
-  td.when(mockAdapter.getNumberOfOptions()).thenReturn(opts.length);
-  td.when(mockAdapter.getValueForOptionAtIndex(selectedIndex)).thenReturn(opts[selectedIndex]);
-  td.when(mockAdapter.getTextForOptionAtIndex(selectedIndex)).thenReturn(`${opts[selectedIndex]} text`);
-
-  foundation.setSelectedIndex(selectedIndex);
-  assert.equal(foundation.getValue(), opts[selectedIndex]);
-});
-
-test('#getValue() returns an empty string if selected index < 0', () => {
+test('#handleBlur calls foundation.handleChange()', () => {
   const {foundation} = setupTest();
-  assert.equal(foundation.getValue(), '');
+  foundation.handleChange = td.func();
+  foundation.handleBlur();
+  td.verify(foundation.handleChange(false), {times: 1});
+});
+
+test('#handleBlur calls adapter.deactivateBottomLine()', () => {
+  const {foundation, mockAdapter} = setupTest();
+  foundation.handleBlur();
+  td.verify(mockAdapter.deactivateBottomLine(), {times: 1});
+});
+
+test('#handleBlur does not call deactivateBottomLine if isMenuOpen=true', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.isMenuOpen()).thenReturn(true);
+  foundation.handleBlur();
+  td.verify(mockAdapter.deactivateBottomLine(), {times: 0});
+});
+
+test('#handleBlur calls helperText.setValidity(true) if menu is not open', () => {
+  const hasIcon = true;
+  const hasHelperText = true;
+  const {foundation, mockAdapter, helperText} = setupTest(hasIcon, hasHelperText);
+  td.when(mockAdapter.hasClass(cssClasses.REQUIRED)).thenReturn(true);
+  td.when(mockAdapter.isMenuOpen()).thenReturn(false);
+  td.when(mockAdapter.checkValidity()).thenReturn(true);
+  foundation.handleBlur();
+  td.verify(helperText.setValidity(true), {times: 1});
+});
+
+test('#handleClick does nothing if isMenuOpen=true', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.isMenuOpen()).thenReturn(true);
+  foundation.handleClick(0);
+  td.verify(mockAdapter.setRippleCenter(0), {times: 0});
+});
+
+test('#handleClick sets the ripple center if isMenuOpen=false', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.isMenuOpen()).thenReturn(false);
+  foundation.handleClick(0);
+  td.verify(mockAdapter.setRippleCenter(0), {times: 1});
+});
+
+test('#handleClick opens the menu if the select is focused and isMenuOpen=false', () => {
+  const {foundation, mockAdapter} = setupTest();
+  td.when(mockAdapter.isMenuOpen()).thenReturn(false);
+  td.when(mockAdapter.hasClass(cssClasses.FOCUSED)).thenReturn(true);
+  foundation.handleClick(0);
+  td.verify(mockAdapter.openMenu(), {times: 1});
+});
+
+test('#handleKeydown calls adapter.openMenu if valid keys are pressed, menu is not open and select is focused',
+  () => {
+    const {foundation, mockAdapter} = setupTest();
+    const preventDefault = td.func();
+    const event = {key: 'Enter', preventDefault};
+    td.when(mockAdapter.isMenuOpen()).thenReturn(false);
+    td.when(mockAdapter.hasClass('mdc-select--focused')).thenReturn(true);
+    foundation.handleKeydown(event);
+    event.key = 'Space';
+    foundation.handleKeydown(event);
+    event.key = 'ArrowUp';
+    foundation.handleKeydown(event);
+    event.key = 'ArrowDown';
+    foundation.handleKeydown(event);
+    event.key = '';
+    event.keyCode = 13; // Enter
+    foundation.handleKeydown(event);
+    event.keyCode = 32; // Space
+    foundation.handleKeydown(event);
+    event.keyCode = 38; // Up
+    foundation.handleKeydown(event);
+    event.keyCode = 40; // Down
+    foundation.handleKeydown(event);
+    td.verify(mockAdapter.openMenu(), {times: 8});
+    td.verify(preventDefault(), {times: 8});
+  });
+
+test('#handleKeydown does not call adapter.openMenu if Enter/Space key is pressed, and select is not focused', () => {
+  const {foundation, mockAdapter} = setupTest();
+  const preventDefault = td.func();
+  const event = {key: 'Enter', preventDefault};
+  td.when(mockAdapter.isMenuOpen()).thenReturn(false);
+  td.when(mockAdapter.hasClass('mdc-select--focused')).thenReturn(false);
+  foundation.handleKeydown(event);
+  event.key = 'Space';
+  foundation.handleKeydown(event);
+  event.key = 'ArrowUp';
+  foundation.handleKeydown(event);
+  event.key = 'ArrowDown';
+  foundation.handleKeydown(event);
+  event.key = '';
+  event.keyCode = 13; // Enter
+  foundation.handleKeydown(event);
+  event.keyCode = 32; // Space
+  foundation.handleKeydown(event);
+  event.keyCode = 38; // Up
+  foundation.handleKeydown(event);
+  event.keyCode = 40; // Down
+  foundation.handleKeydown(event);
+  td.verify(mockAdapter.openMenu(), {times: 0});
+  td.verify(preventDefault(), {times: 0});
+});
+
+test('#handleKeydown does not call adapter.openMenu if menu is opened', () => {
+  const {foundation, mockAdapter} = setupTest();
+  const preventDefault = td.func();
+  const event = {key: 'Enter', preventDefault};
+  td.when(mockAdapter.isMenuOpen()).thenReturn(true);
+  foundation.handleKeydown(event);
+  event.key = 'Space';
+  foundation.handleKeydown(event);
+  event.key = 'ArrowUp';
+  foundation.handleKeydown(event);
+  event.key = 'ArrowDown';
+  foundation.handleKeydown(event);
+  event.key = '';
+  event.keyCode = 13; // Enter
+  foundation.handleKeydown(event);
+  event.keyCode = 32; // Space
+  foundation.handleKeydown(event);
+  event.keyCode = 38; // Up
+  foundation.handleKeydown(event);
+  event.keyCode = 40; // Down
+  foundation.handleKeydown(event);
+  td.verify(mockAdapter.openMenu(), {times: 0});
+  td.verify(preventDefault(), {times: 0});
+});
+
+test('#layout calls notchOutline(true) if value is not an empty string', () => {
+  const {foundation, mockAdapter} = setupTest();
+  foundation.notchOutline = td.func();
+  td.when(mockAdapter.getValue()).thenReturn(' ');
+  foundation.layout();
+  td.verify(foundation.notchOutline(true), {times: 1});
+});
+
+test('#layout calls notchOutline(false) if value is an empty string', () => {
+  const {foundation} = setupTest();
+  foundation.notchOutline = td.func();
+  foundation.layout();
+  td.verify(foundation.notchOutline(false), {times: 1});
+});
+
+test('#setLeadingIconAriaLabel sets the aria-label of the leading icon element', () => {
+  const {foundation, leadingIcon} = setupTest();
+  foundation.setLeadingIconAriaLabel('foo');
+  td.verify(leadingIcon.setAriaLabel('foo'), {times: 1});
+});
+
+test('#setLeadingIconContent sets the content of the leading icon element', () => {
+  const {foundation, leadingIcon} = setupTest();
+  foundation.setLeadingIconContent('foo');
+  td.verify(leadingIcon.setContent('foo'), {times: 1});
+});
+
+test('#setLeadingIconAriaLabel does nothing if the leading icon element is undefined', () => {
+  const hasLeadingIcon = false;
+  const {foundation, leadingIcon} = setupTest(hasLeadingIcon);
+  assert.doesNotThrow(() => foundation.setLeadingIconAriaLabel('foo'));
+  td.verify(leadingIcon.setAriaLabel('foo'), {times: 0});
+});
+
+test('#setLeadingIconContent does nothing if the leading icon element is undefined', () => {
+  const hasLeadingIcon = false;
+  const {foundation, leadingIcon} = setupTest(hasLeadingIcon);
+  assert.doesNotThrow(() => foundation.setLeadingIconContent('foo'));
+  td.verify(leadingIcon.setContent('foo'), {times: 0});
+});
+
+test('#setHelperTextContent sets the content of the helper text element', () => {
+  const hasIcon = false;
+  const hasHelperText = true;
+  const {foundation, helperText} = setupTest(hasIcon, hasHelperText);
+  foundation.setHelperTextContent('foo');
+  td.verify(helperText.setContent('foo'));
+});
+
+test('#setHelperTextContent does not throw an error if there is no helperText element', () => {
+  const hasIcon = false;
+  const hasHelperText = false;
+  const {foundation} = setupTest(hasIcon, hasHelperText);
+  assert.doesNotThrow(() => foundation.setHelperTextContent('foo'));
 });
